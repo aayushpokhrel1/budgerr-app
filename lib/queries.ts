@@ -60,3 +60,7 @@ export function useSettleBet() {
 export function usePlaystatTonightsEdges() {
   return useQuery({ queryKey: ['playstat-edges-tonight'], queryFn: playstatApi.edges.listTonight });
 }
+
+export function usePlaystatTonightsGames() {
+  return useQuery({ queryKey: ['playstat-games-tonight'], queryFn: playstatApi.games.listTonight });
+}

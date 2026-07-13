@@ -14,6 +14,17 @@ export interface PlaystatEdge {
   edge: number;
 }
 
+export interface PlaystatGame {
+  game_id: number;
+  sport: string;
+  date: string;
+  home_team_id: number;
+  home_team_name: string;
+  away_team_id: number;
+  away_team_name: string;
+  status: string | null;
+}
+
 export const playstatApi = {
   edges: {
     listTonight: async (): Promise<PlaystatEdge[]> => {
@@ -22,6 +33,14 @@ export const playstatApi = {
       const edges: PlaystatEdge[] = await res.json();
       const today = new Date().toISOString().slice(0, 10);
       return edges.filter((edge) => edge.date === today);
+    },
+  },
+  games: {
+    listTonight: async (): Promise<PlaystatGame[]> => {
+      const today = new Date().toISOString().slice(0, 10);
+      const res = await fetch(`${PLAYSTAT_API_URL}/games?date=${today}&sport=nba`);
+      if (!res.ok) throw new Error(`Playstat API request failed: /games (${res.status})`);
+      return res.json();
     },
   },
 };

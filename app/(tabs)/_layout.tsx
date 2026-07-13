@@ -44,6 +44,19 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="tonight"
+        options={{
+          title: 'Tonight',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{ ios: 'sportscourt', android: 'sports_basketball', web: 'sports_basketball' }}
+              tintColor={color}
+              size={28}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
