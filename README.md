@@ -22,7 +22,8 @@ Budgerr App (this repo)
 ```
 
 - No local database, no offline cache beyond what React Query keeps in memory — this app is a thin client over the backend's API
-- A second, independent frontend (a Next.js web mirror) is planned as a separate repo, hitting the same backend — see the backend README's Section 9
+- A second, independent frontend — [`budgerr-web`](https://github.com/aayushpokhrel1/budgerr-web), a full Next.js mirror — hits the same backend; see the backend README's Section 9
+- The Log-a-bet form also calls a second, unrelated API directly: [playstat](https://github.com/aayushpokhrel1/Playstat)'s `GET /edges`, for the "Tonight's edges" pre-fill panel (see Section 5) — read-only, no shared backend or database with Budgerr
 
 ---
 
@@ -72,12 +73,11 @@ lib/
 - Best-card tip — "best card for [category] right now," pulled from the rewards tracker's proactive lookup
 - Trend stats — net bet profit vs. bank net cash flow for the current month, shown side by side since the backend deliberately keeps these as two separate numbers (they can diverge — see backend README Section 3.2)
 
-**Log a bet** (`app/modal.tsx`): sportsbook, bet type (single/parlay), stake, potential payout, and a dynamic list of per-leg detail (player, stat type, line, side, odds) — matches the backend's quick-entry design goal of under 15 seconds per bet.
+**Log a bet** (`app/modal.tsx`): sportsbook, bet type (single/parlay), stake, potential payout, and a dynamic list of per-leg detail (player, stat type, line, side, odds) — matches the backend's quick-entry design goal of under 15 seconds per bet. A "Tonight's edges (from playstat)" panel lists today's positive-edge legs from the [playstat](https://github.com/aayushpokhrel1/Playstat) project's `/edges` endpoint (player, stat, line, side, odds) — tapping "+ Add" pre-fills a leg instead of typing it by hand.
 
 **Not built yet**:
 - Bet settlement (won/lost/push) from the app — currently only doable via the backend API directly
 - A Stats tab (ties into the separate basketball analytics project once that's further along)
-- Pre-filling bet legs from tonight's slate
 
 ---
 
@@ -85,6 +85,7 @@ lib/
 
 ### Prerequisites
 - The [Budgerr backend](https://github.com/aayushpokhrel1/Budgerr) running locally (`uvicorn app.main:app --port 8001`), with its `CORS_ORIGINS` including wherever this app is served from
+- Optional: the [playstat](https://github.com/aayushpokhrel1/Playstat) API running locally (`:8000`) for the "Tonight's edges" panel — the app works fine without it, that panel just stays empty
 - Node.js 18+
 
 ### Setup
@@ -111,5 +112,6 @@ First bundle on `web` can take 60-100s (Reanimated/worklets are slow to cold-com
 | Variable | Purpose | Default |
 |---|---|---|
 | `EXPO_PUBLIC_API_URL` | Base URL of the Budgerr backend | `http://localhost:8001` in `.env.example` — update if the backend runs elsewhere |
+| `EXPO_PUBLIC_PLAYSTAT_API_URL` | Base URL of the playstat API (for the Tonight's edges panel) | `http://localhost:8000` in `.env.example` |
 
 Note: on a physical device or Android emulator, `localhost` refers to the device itself, not your dev machine — use your machine's LAN IP or `10.0.2.2` (Android emulator) instead.
