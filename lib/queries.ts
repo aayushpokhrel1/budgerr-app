@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, BetInput, BetStatus } from './api';
+import { playstatApi } from './playstat';
 
 export function currentMonth(): string {
   const now = new Date();
@@ -54,4 +55,8 @@ export function useSettleBet() {
       queryClient.invalidateQueries({ queryKey: ['bets-trend'] });
     },
   });
+}
+
+export function usePlaystatTonightsEdges() {
+  return useQuery({ queryKey: ['playstat-edges-tonight'], queryFn: playstatApi.edges.listTonight });
 }

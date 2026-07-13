@@ -12,7 +12,8 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BetLegInput, BetType } from '@/lib/api';
-import { useCreateBet } from '@/lib/queries';
+import { PlaystatEdge } from '@/lib/playstat';
+import { useCreateBet, usePlaystatTonightsEdges } from '@/lib/queries';
 
 interface LegDraft {
   player_name: string;
@@ -28,6 +29,7 @@ export default function LogBetModal() {
   const theme = Colors[useColorScheme()];
   const router = useRouter();
   const createBet = useCreateBet();
+  const tonightsEdges = usePlaystatTonightsEdges();
 
   const [sportsbook, setSportsbook] = useState('');
   const [betType, setBetType] = useState<BetType>('single');
@@ -37,6 +39,19 @@ export default function LogBetModal() {
 
   const updateLeg = (index: number, field: keyof LegDraft, value: string) => {
     setLegs((prev) => prev.map((leg, i) => (i === index ? { ...leg, [field]: value } : leg)));
+  };
+
+  const addLegFromEdge = (edge: PlaystatEdge) => {
+    setLegs((prev) => [
+      ...prev,
+      {
+        player_name: edge.player_name,
+        stat_type: edge.stat_type,
+        line_value: String(edge.line_value),
+        side: edge.side,
+        odds: String(edge.odds),
+      },
+    ]);
   };
 
   const submit = () => {
@@ -111,6 +126,28 @@ export default function LogBetModal() {
         value={potentialPayout}
         onChangeText={setPotentialPayout}
       />
+
+      {tonightsEdges.data && tonightsEdges.data.length > 0 && (
+        <View style={[styles.edgesCard, { backgroundColor: theme.card }]}>
+          <Text style={[styles.edgesTitle, { color: theme.textSecondary }]}>
+            Tonight&apos;s edges (from playstat)
+          </Text>
+          {tonightsEdges.data.map((edge) => (
+            <View key={`${edge.player_id}-${edge.game_id}-${edge.stat_type}`} style={styles.edgeRow}>
+              <Text style={{ fontSize: 13, flex: 1 }} numberOfLines={1}>
+                {edge.player_name} {edge.side} {edge.line_value} {edge.stat_type}{' '}
+                <Text style={{ color: theme.textMuted }}>
+                  ({edge.odds > 0 ? '+' : ''}
+                  {edge.odds})
+                </Text>
+              </Text>
+              <Pressable onPress={() => addLegFromEdge(edge)}>
+                <Text style={{ color: theme.tint, fontSize: 13 }}>+ Add</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      )}
 
       <View style={styles.legsHeaderRow}>
         <Text style={styles.label}>Legs</Text>
@@ -188,6 +225,9 @@ const styles = StyleSheet.create({
   typeRow: { flexDirection: 'row', gap: 8 },
   typeButton: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, borderWidth: 0.5 },
   legsHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  edgesCard: { borderRadius: 8, padding: 12, marginTop: 14, gap: 6 },
+  edgesTitle: { fontSize: 12, marginBottom: 4 },
+  edgeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   legCard: { borderWidth: 0.5, borderRadius: 8, padding: 12, marginTop: 10, gap: 8 },
   legRow: { flexDirection: 'row', gap: 8 },
   legInput: { flex: 1 },
