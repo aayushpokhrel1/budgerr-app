@@ -90,6 +90,34 @@ export interface BestCardResponse {
   options: BestCardOption[];
 }
 
+export interface Account {
+  account_id: number;
+  plaid_item_id: string;
+  institution_name: string;
+  account_type: string;
+  mask: string;
+  current_balance: number;
+}
+
+export interface Transaction {
+  txn_id: number;
+  account_id: number;
+  date: string;
+  amount: number;
+  merchant_name: string | null;
+  plaid_category: string | null;
+  custom_category: string | null;
+  is_betting: boolean;
+}
+
+export interface TransactionFilters {
+  start?: string;
+  end?: string;
+  accountId?: number;
+  uncategorizedOnly?: boolean;
+  limit?: number;
+}
+
 export const api = {
   bets: {
     list: (status?: BetStatus) =>
@@ -118,6 +146,33 @@ export const api = {
     bestCard: (categoryId: number, asOf?: string) =>
       request<BestCardResponse>(
         `/rewards/best-card?category_id=${categoryId}${asOf ? `&as_of=${asOf}` : ''}`
+      ),
+  },
+  plaid: {
+    accounts: {
+      list: () => request<Account[]>('/plaid/accounts'),
+    },
+    transactions: {
+      list: (filters: TransactionFilters = {}) => {
+        const params = new URLSearchParams();
+        if (filters.start) params.set('start', filters.start);
+        if (filters.end) params.set('end', filters.end);
+        if (filters.accountId !== undefined) params.set('account_id', String(filters.accountId));
+        if (filters.uncategorizedOnly) params.set('uncategorized_only', 'true');
+        if (filters.limit !== undefined) params.set('limit', String(filters.limit));
+        const qs = params.toString();
+        return request<Transaction[]>(`/plaid/transactions${qs ? `?${qs}` : ''}`);
+      },
+      categorize: (txnId: number, customCategory: string | null) =>
+        request<Transaction>(`/plaid/transactions/${txnId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ custom_category: customCategory }),
+        }),
+    },
+    syncTransactions: (itemId: string) =>
+      request<{ added: number; modified: number; removed: number }>(
+        `/plaid/sync-transactions/${itemId}`,
+        { method: 'POST' }
       ),
   },
 };

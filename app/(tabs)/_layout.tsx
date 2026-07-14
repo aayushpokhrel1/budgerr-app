@@ -57,6 +57,32 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="accounts"
+        options={{
+          title: 'Accounts',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{ ios: 'building.columns', android: 'account_balance', web: 'account_balance' }}
+              tintColor={color}
+              size={28}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="transactions"
+        options={{
+          title: 'Transactions',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{ ios: 'list.bullet', android: 'receipt_long', web: 'receipt_long' }}
+              tintColor={color}
+              size={28}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { api, BetInput, BetStatus } from './api';
+import { api, BetInput, BetStatus, TransactionFilters } from './api';
 import { playstatApi } from './playstat';
 
 export function currentMonth(): string {
@@ -63,4 +63,47 @@ export function usePlaystatTonightsEdges() {
 
 export function usePlaystatTonightsGames() {
   return useQuery({ queryKey: ['playstat-games-tonight'], queryFn: playstatApi.games.listTonight });
+}
+
+export function useAccounts() {
+  return useQuery({ queryKey: ['accounts'], queryFn: api.plaid.accounts.list });
+}
+
+export function useTransactions(filters: TransactionFilters = {}) {
+  return useQuery({
+    queryKey: ['transactions', filters],
+    queryFn: () => api.plaid.transactions.list(filters),
+  });
+}
+
+export function useCategorizeTransaction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ txnId, customCategory }: { txnId: number; customCategory: string | null }) =>
+      api.plaid.transactions.categorize(txnId, customCategory),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['budget-periods'] });
+    },
+  });
+}
+
+export function useSyncTransactions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (itemId: string) => api.plaid.syncTransactions(itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['budget-periods'] });
+    },
+  });
+}
+
+export function useRecomputeBudgetPeriods() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (month: string) => api.budgetPeriods.recompute(month),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['budget-periods'] }),
+  });
 }

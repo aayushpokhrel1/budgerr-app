@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { Link } from 'expo-router';
+import { useEffect, useMemo } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 
 import { BestCardTip } from '@/components/budget/BestCardTip';
@@ -7,16 +8,21 @@ import { CategoryTile } from '@/components/budget/CategoryTile';
 import { RecentBets } from '@/components/budget/RecentBets';
 import { TrendStats } from '@/components/budget/TrendStats';
 import { Text, View } from '@/components/Themed';
+import Colors from '@/constants/Colors';
+import { useColorScheme } from '@/components/useColorScheme';
 import {
   currentMonth,
+  useAccounts,
   useBestCard,
   useBets,
   useBetsTrend,
   useBudgetPeriods,
   useCategories,
+  useRecomputeBudgetPeriods,
 } from '@/lib/queries';
 
 export default function BudgetScreen() {
+  const theme = Colors[useColorScheme()];
   const month = useMemo(() => currentMonth(), []);
   const [start, end] = useMemo(() => {
     const [y, m] = month.split('-').map(Number);
@@ -28,6 +34,17 @@ export default function BudgetScreen() {
   const budgetPeriods = useBudgetPeriods(month);
   const bets = useBets();
   const trend = useBetsTrend(start, end);
+  const accounts = useAccounts();
+
+  // Ensures every category has an up-to-date budget_period row as soon as
+  // this screen is viewed, rather than only after a sync/categorization
+  // happens to touch this month — otherwise a freshly created category just
+  // never shows up here.
+  const recomputeBudgetPeriods = useRecomputeBudgetPeriods();
+  useEffect(() => {
+    recomputeBudgetPeriods.mutate(month);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [month]);
 
   const bettingCategory = categories.data?.find((c) => c.is_betting_category);
   const otherCategories = categories.data?.filter((c) => !c.is_betting_category) ?? [];
@@ -66,6 +83,17 @@ export default function BudgetScreen() {
     >
       <Text style={styles.header}>Budget</Text>
 
+      {accounts.data?.length === 0 && (
+        <View style={[styles.nudge, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={{ fontSize: 13, color: theme.textSecondary, flex: 1 }}>
+            No bank accounts linked yet.
+          </Text>
+          <Link href="/accounts" style={{ fontSize: 13, color: theme.tint }}>
+            View accounts
+          </Link>
+        </View>
+      )}
+
       {bettingCategory && bettingPeriod && (
         <BudgetPeriodCard category={bettingCategory} period={bettingPeriod} />
       )}
@@ -96,4 +124,14 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: { fontSize: 22, fontWeight: '500', marginBottom: 16 },
   tileRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  nudge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 12,
+    borderWidth: 0.5,
+    padding: 14,
+    marginBottom: 12,
+    gap: 8,
+  },
 });
