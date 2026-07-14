@@ -1,13 +1,61 @@
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { cardShadow } from '@/constants/Shadow';
 import { useColorScheme } from '@/components/useColorScheme';
-import { PlaystatParlayRecommendation } from '@/lib/playstat';
+import { BetLegInput } from '@/lib/api';
+import { PlaystatEdge, PlaystatParlayLeg, PlaystatParlayRecommendation } from '@/lib/playstat';
+import { useCreateBet } from '@/lib/queries';
 
-export function ParlayCard({ parlay }: { parlay: PlaystatParlayRecommendation }) {
+const PAPER_STAKE = 10;
+
+function lineValueForLeg(leg: PlaystatParlayLeg, edges: PlaystatEdge[]): number | null {
+  const match = edges.find(
+    (edge) =>
+      edge.player_id === leg.player_id &&
+      edge.game_id === leg.game_id &&
+      edge.stat_type === leg.stat_type
+  );
+  return match?.line_value ?? null;
+}
+
+export function ParlayCard({
+  parlay,
+  edges = [],
+}: {
+  parlay: PlaystatParlayRecommendation;
+  edges?: PlaystatEdge[];
+}) {
   const theme = Colors[useColorScheme()];
+  const createBet = useCreateBet();
+  const [logged, setLogged] = useState(false);
+
+  const logAsPaperBet = () => {
+    if (createBet.isPending || logged) return;
+
+    const legInputs: BetLegInput[] = parlay.legs.map((leg) => ({
+      player_name: leg.player_name ?? undefined,
+      stat_type: leg.stat_type,
+      line_value: lineValueForLeg(leg, edges) ?? undefined,
+      side: leg.side,
+      odds: leg.odds,
+      model_prob: leg.model_prob,
+    }));
+
+    createBet.mutate(
+      {
+        sportsbook: 'paper',
+        bet_type: parlay.legs.length > 1 ? 'parlay' : 'single',
+        stake: PAPER_STAKE,
+        potential_payout: PAPER_STAKE * parlay.combined_odds,
+        legs: legInputs,
+        is_paper: true,
+      },
+      { onSuccess: () => setLogged(true) }
+    );
+  };
 
   return (
     <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.edgeBorder }]}>
@@ -36,6 +84,28 @@ export function ParlayCard({ parlay }: { parlay: PlaystatParlayRecommendation })
           </Text>
         ))}
       </View>
+      <Pressable
+        style={[
+          styles.paperButton,
+          { borderColor: theme.border },
+          logged && { backgroundColor: theme.successBg, borderColor: theme.successBg },
+        ]}
+        onPress={logAsPaperBet}
+        disabled={createBet.isPending || logged}
+      >
+        {createBet.isPending ? (
+          <ActivityIndicator size="small" color={theme.textSecondary} />
+        ) : (
+          <Text
+            style={[
+              styles.paperButtonText,
+              { color: logged ? theme.success : theme.textSecondary },
+            ]}
+          >
+            {logged ? 'Logged ✓' : 'Log as paper bet'}
+          </Text>
+        )}
+      </Pressable>
     </View>
   );
 }
@@ -48,4 +118,12 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 11, fontWeight: '500' },
   legsList: { marginTop: 8, gap: 4 },
   legRow: { fontSize: 12 },
+  paperButton: {
+    marginTop: 10,
+    borderWidth: 0.5,
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  paperButtonText: { fontSize: 12, fontWeight: '500' },
 });

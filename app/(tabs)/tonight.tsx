@@ -103,7 +103,9 @@ export default function TonightScreen() {
           multi-game slate with lines.
         </Text>
       ) : (
-        parlays.data?.map((parlay) => <ParlayCard key={parlay.parlay_id} parlay={parlay} />)
+        parlays.data?.map((parlay) => (
+          <ParlayCard key={parlay.parlay_id} parlay={parlay} edges={edges.data ?? []} />
+        ))
       )}
 
       <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>

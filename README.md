@@ -75,6 +75,8 @@ lib/
 
 **Log a bet** (`app/modal.tsx`): sportsbook, bet type (single/parlay), stake, potential payout, and a dynamic list of per-leg detail (player, stat type, line, side, odds) — matches the backend's quick-entry design goal of under 15 seconds per bet. A "Tonight's edges (from playstat)" panel lists today's positive-edge legs from the [playstat](https://github.com/aayushpokhrel1/Playstat) project's `/edges` endpoint (player, stat, line, side, odds) — tapping "+ Add" pre-fills a leg instead of typing it by hand.
 
+**Log as paper bet** (`components/tonight/ParlayCard.tsx`, on the Tonight tab): one tap logs a recommended parlay as a hypothetical bet (`sportsbook: "paper"`, `is_paper: true`, $10 default stake) without leaving the card, carrying each leg's `model_prob` from the playstat edge for later accuracy tracking. Paper bets auto-settle like real ones but are excluded from real-money P/L on the backend, and show a "PAPER" badge in the Recent bets list.
+
 **Not built yet**:
 - Bet settlement (won/lost/push) from the app — currently only doable via the backend API directly
 - A Stats tab (ties into the separate basketball analytics project once that's further along)

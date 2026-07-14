@@ -53,9 +53,16 @@ export function RecentBets({ bets }: { bets: Bet[] }) {
         return (
           <View key={bet.bet_id} style={[styles.row, { borderTopColor: theme.border }]}>
             <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={styles.rowTitle}>
-                {bet.sportsbook} {bet.bet_type}
-              </Text>
+              <View style={styles.rowTitleLine}>
+                <Text style={styles.rowTitle}>
+                  {bet.sportsbook} {bet.bet_type}
+                </Text>
+                {bet.is_paper && (
+                  <View style={[styles.paperBadge, { backgroundColor: theme.warningBg }]}>
+                    <Text style={[styles.paperBadgeText, { color: theme.warning }]}>PAPER</Text>
+                  </View>
+                )}
+              </View>
               {summary && (
                 <Text style={{ fontSize: 12, color: theme.textMuted }} numberOfLines={1}>
                   {summary}
@@ -85,7 +92,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderTopWidth: 0.5,
   },
+  rowTitleLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   rowTitle: { fontSize: 13, textTransform: 'capitalize' },
+  paperBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  paperBadgeText: { fontSize: 10, fontWeight: '700' },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   badgeText: { fontSize: 12 },
 });
