@@ -61,6 +61,10 @@ export function usePlaystatSlate() {
   return useQuery({ queryKey: ['playstat-slate'], queryFn: playstatApi.slate.next });
 }
 
+export function usePlaystatAllEdges() {
+  return useQuery({ queryKey: ['playstat-edges', 'all'], queryFn: playstatApi.edges.list });
+}
+
 export function usePlaystatEdges(date: string | undefined) {
   return useQuery({
     queryKey: ['playstat-edges', date],

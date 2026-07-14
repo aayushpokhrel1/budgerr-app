@@ -11,14 +11,13 @@ import { useCreateBet } from '@/lib/queries';
 
 const PAPER_STAKE = 10;
 
-function lineValueForLeg(leg: PlaystatParlayLeg, edges: PlaystatEdge[]): number | null {
-  const match = edges.find(
+function edgeForLeg(leg: PlaystatParlayLeg, edges: PlaystatEdge[]): PlaystatEdge | undefined {
+  return edges.find(
     (edge) =>
       edge.player_id === leg.player_id &&
       edge.game_id === leg.game_id &&
       edge.stat_type === leg.stat_type
   );
-  return match?.line_value ?? null;
 }
 
 export function ParlayCard({
@@ -35,14 +34,19 @@ export function ParlayCard({
   const logAsPaperBet = () => {
     if (createBet.isPending || logged) return;
 
-    const legInputs: BetLegInput[] = parlay.legs.map((leg) => ({
+    // The matching edge carries the prop line and game date the parlay
+    // recommendation omits — auto-settlement needs the line to grade a leg
+    // and matches box scores on the bet's placed_at date.
+    const matchedEdges = parlay.legs.map((leg) => edgeForLeg(leg, edges));
+    const legInputs: BetLegInput[] = parlay.legs.map((leg, i) => ({
       player_name: leg.player_name ?? undefined,
       stat_type: leg.stat_type,
-      line_value: lineValueForLeg(leg, edges) ?? undefined,
+      line_value: matchedEdges[i]?.line_value,
       side: leg.side,
       odds: leg.odds,
       model_prob: leg.model_prob,
     }));
+    const gameDate = matchedEdges.find((e) => e)?.date;
 
     createBet.mutate(
       {
@@ -50,6 +54,7 @@ export function ParlayCard({
         bet_type: parlay.legs.length > 1 ? 'parlay' : 'single',
         stake: PAPER_STAKE,
         potential_payout: PAPER_STAKE * parlay.combined_odds,
+        placed_at: gameDate ? `${gameDate}T12:00:00Z` : undefined,
         legs: legInputs,
         is_paper: true,
       },

@@ -94,6 +94,7 @@ export const playstatApi = {
     },
   },
   edges: {
+    list: (): Promise<PlaystatEdge[]> => fetchJson<PlaystatEdge[]>('/edges'),
     listForDate: async (date: string): Promise<PlaystatEdge[]> => {
       const edges = await fetchJson<PlaystatEdge[]>('/edges');
       return edges.filter((edge) => edge.date === date);
