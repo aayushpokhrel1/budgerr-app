@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import { cardShadow } from '@/constants/Shadow';
 import { useColorScheme } from '@/components/useColorScheme';
 import { PlaystatEdge, PlaystatGame, PlaystatGamePrediction } from '@/lib/playstat';
 
@@ -40,7 +41,7 @@ export function GameCard({
       {firstInning && (
         <Text style={[styles.edgeRow, { color: theme.textSecondary, marginTop: 8 }]}>
           1st inning under {firstInning.line_value} runs:{' '}
-          <Text style={{ color: '#059669', fontWeight: '500' }}>
+          <Text style={{ color: theme.edge, fontWeight: '500' }}>
             {Math.round(firstInning.prob_under * 100)}%
           </Text>
           {firstInning.book_under_odds != null && (
@@ -74,7 +75,7 @@ export function GameCard({
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 12, borderWidth: 0.5, padding: 14, marginBottom: 10 },
+  card: { borderRadius: 12, borderWidth: 0.5, padding: 14, marginBottom: 10, ...cardShadow },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   matchup: { fontSize: 14, fontWeight: '500', flex: 1 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },

@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-14T13:15:00Z",
+  "title": "Design System: Budgerr App",
+  "extensions": {
+    "colorMeta": {
+      "accent": { "role": "primary", "displayName": "Quiet Plum", "canonical": "oklch(46% 0.14 338)", "tonalRamp": ["#3b1730", "#54204a", "#70125d", "#873273", "#a1478d", "#c473ab", "#d983c1", "#e6a9d6"] },
+      "accent-pressed": { "role": "primary", "displayName": "Quiet Plum, Pressed", "canonical": "oklch(38% 0.15 338)" },
+      "ink": { "role": "neutral", "displayName": "Ledger Ink", "canonical": "#000000", "tonalRamp": ["#000000", "#1a1a1a", "#333333", "#4d4d4d", "#666666", "#808080", "#999999", "#cccccc"] },
+      "ink-muted": { "role": "neutral", "displayName": "Ledger Ink, Muted", "canonical": "#6c6c6c", "note": "Corrected from #999999 (light) / #777777 (dark), which failed WCAG AA (as low as 2.61:1) on card and screen backgrounds. New values (#6c6c6c light, #888888 dark) clear 4.5:1 against both." },
+      "surface": { "role": "neutral", "displayName": "Ledger Paper", "canonical": "#ffffff" },
+      "surface-card": { "role": "neutral", "displayName": "Ledger Card", "canonical": "#f5f5f5" },
+      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "#e2e2e2" },
+      "success": { "role": "success", "displayName": "Ledger Green", "canonical": "#1d9e75" },
+      "warning": { "role": "warning", "displayName": "Ledger Amber", "canonical": "#ba7517" },
+      "danger": { "role": "danger", "displayName": "Ledger Red", "canonical": "#a32d2d" },
+      "edge": { "role": "info", "displayName": "Ledger Edge Green", "canonical": "#00794d" }
+    },
+    "typographyMeta": {
+      "header": { "displayName": "Header", "purpose": "Screen title only, one per screen." },
+      "title": { "displayName": "Card Title", "purpose": "Card headings and game/parlay summaries." },
+      "amount": { "displayName": "Amount", "purpose": "The hero dollar/percent figure inside a card." },
+      "body": { "displayName": "Body", "purpose": "Supporting sentences and sub-amounts." },
+      "label": { "displayName": "Label", "purpose": "Badges, status pills, edge/leg detail rows." }
+    },
+    "shadows": [
+      { "name": "card-rest", "value": "boxShadow: '0px 2px 8px rgba(0,0,0,0.06)' / Android elevation:2", "purpose": "Ambient lift for every card-shaped component, exported as `cardShadow` from constants/Shadow.ts. Uses RN's unified boxShadow string (RN 0.86+), not the deprecated discrete shadow* props. Live on GameCard and ParlayCard (Tonight tab); still pending on the four budget-tab card components." }
+    ],
+    "motion": [],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Budget Period Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Primary allowance card: category title, status badge, spent/limit amount, progress track.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-header\"><span class=\"ds-card-title\">Betting</span><span class=\"ds-badge ds-badge-warning\">82% used</span></div><div class=\"ds-amount-row\"><span class=\"ds-amount\">$410</span><span class=\"ds-amount-sub\"> of $500 spent · $90 left</span></div><div class=\"ds-track\"><div class=\"ds-track-fill\" style=\"width:82%\"></div></div></div>",
+      "css": ".ds-card { background:#f5f5f5; border:0.5px solid #e2e2e2; border-radius:12px; padding:16px; } .ds-card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; } .ds-card-title { font-size:14px; font-weight:500; color:#000; } .ds-badge { padding:3px 8px; border-radius:6px; font-size:12px; font-weight:500; } .ds-badge-warning { background:#faeeda; color:#ba7517; } .ds-amount-row { display:flex; align-items:baseline; margin-bottom:8px; } .ds-amount { font-size:22px; font-weight:500; color:#000; } .ds-amount-sub { font-size:13px; color:#666; } .ds-track { height:6px; border-radius:4px; overflow:hidden; background:#e2e2e2; } .ds-track-fill { height:100%; border-radius:4px; background:#ba7517; }"
+    },
+    {
+      "name": "Status Badge (ok/warning/danger)",
+      "kind": "chip",
+      "refersTo": "badge-ok",
+      "description": "Filled read-only status pill reused for budget %, bet outcome, and category state.",
+      "html": "<span class=\"ds-badge ds-badge-ok\">Won +$45</span>",
+      "css": ".ds-badge { padding:3px 8px; border-radius:6px; font-size:12px; font-weight:500; display:inline-block; } .ds-badge-ok { background:#e1f5ee; color:#1d9e75; } .ds-badge-warning { background:#faeeda; color:#ba7517; } .ds-badge-danger { background:#fcebeb; color:#a32d2d; }"
+    },
+    {
+      "name": "Category Tile",
+      "kind": "card",
+      "refersTo": "tile-default",
+      "description": "Compact side-by-side tile for a non-betting budget category, two per row.",
+      "html": "<div class=\"ds-tile\"><span class=\"ds-tile-label\">Groceries</span><span class=\"ds-tile-amount\">$120<span class=\"ds-tile-amount-sub\"> / $300</span></span></div>",
+      "css": ".ds-tile { flex:1; background:#f5f5f5; border-radius:8px; padding:16px; } .ds-tile-label { display:block; font-size:13px; color:#666; margin-bottom:4px; } .ds-tile-amount { font-size:20px; font-weight:500; color:#000; } .ds-tile-amount-sub { font-size:13px; font-weight:400; color:#666; }"
+    },
+    {
+      "name": "Log a Bet Button",
+      "kind": "button",
+      "refersTo": "log-bet-button",
+      "description": "Outline trigger button on the Recent Bets card header; opens the quick-entry modal. Deliberately quiet — the modal's own submit button is where the accent commits.",
+      "html": "<button class=\"ds-btn-log\">+ Log a bet</button>",
+      "css": ".ds-btn-log { background:transparent; border:0.5px solid #e2e2e2; border-radius:8px; padding:6px 12px; font-size:13px; color:#000; transition:opacity 0.15s; } .ds-btn-log:hover { opacity:0.7; } .ds-btn-log:focus-visible { outline:2px solid #873273; outline-offset:2px; } .ds-btn-log:active { opacity:0.5; }"
+    },
+    {
+      "name": "Log Bet Submit Button",
+      "kind": "button",
+      "refersTo": "submit-button",
+      "description": "The one filled, full-commitment button in the system — modal's final submit action, plum fill, white text.",
+      "html": "<button class=\"ds-btn-submit\">Log bet</button>",
+      "css": ".ds-btn-submit { background:#873273; color:#fff; border:none; border-radius:8px; padding:14px; font-size:15px; font-weight:500; text-align:center; transition:background 0.15s; } .ds-btn-submit:hover { background:#70125d; } .ds-btn-submit:focus-visible { outline:2px solid #873273; outline-offset:2px; } .ds-btn-submit:active { background:#70125d; }"
+    },
+    {
+      "name": "Game Card (Tonight tab)",
+      "kind": "custom",
+      "refersTo": "card-default",
+      "description": "Compact matchup card with status badge and a list of positive-edge legs from playstat.",
+      "html": "<div class=\"ds-game-card\"><div class=\"ds-game-header\"><span class=\"ds-game-matchup\">Yankees @ Red Sox</span><span class=\"ds-game-badge\">Upcoming</span></div><div class=\"ds-edge-row\">J. Smith over 1.5 total_bases <span class=\"ds-edge-odds\">(+120)</span></div></div>",
+      "css": ".ds-game-card { background:#f5f5f5; border:0.5px solid #e2e2e2; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.06); } .ds-game-header { display:flex; align-items:center; justify-content:space-between; gap:8px; } .ds-game-matchup { font-size:14px; font-weight:500; flex:1; } .ds-game-badge { padding:3px 8px; border-radius:6px; font-size:11px; font-weight:500; background:#e2e2e2; color:#873273; } .ds-edge-row { font-size:12px; color:#666; margin-top:8px; } .ds-edge-odds { color:#873273; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Ledger",
+    "overview": "Budgerr App reads like a plainspoken accounting notebook, not a fintech dashboard. Every number — grocery spend, bank cash flow, a bet's stake — gets the same flat card, the same 500-weight amount, the same hairline border. There is no separate \"fun\" visual register for the betting category; the Quiet Ledger doesn't celebrate a parlay any louder than it reports a grocery bill, because the whole point of this app is that a bet is just another line, not a special event.\n\nThe system rejects the two things it's easiest to drift toward: generic navy-and-teal SaaS-finance chrome (stacked gradient-metric cards, hero KPI tiles), and sportsbook/casino energy (neon odds badges, celebratory color). A muted plum accent (#873273) replaces the unmodified Expo-template blue this system launched with — plum reads as a personal, warm choice rather than corporate-trustworthy blue, and its hue sits far enough from the success/warning/danger set that it can never be mistaken for a status color. Card Rest, the system's one ambient shadow, has landed on the Tonight tab's cards as the first application of the \"tactile and confident\" direction; the four budget-tab cards still need the same treatment.",
+    "keyCharacteristics": [
+      "Flat, hairline-bordered cards as the one repeating container — no card-inside-card nesting anywhere in the codebase today",
+      "A single three-way status vocabulary (success/warning/danger) reused identically across budget bars, bet outcomes, and category badges",
+      "System font only, small type scale (11–22px), weight doing the hierarchy work instead of size jumps",
+      "Restrained color: one deliberate plum accent for actions/selection/emphasis, plus the semantic success/warning/danger set — nothing decorative"
+    ],
+    "rules": [
+      { "name": "The One Ledger Rule", "body": "A dollar amount, a percentage, and a bet outcome share the same three status colors and the same type scale. Never introduce a fourth color or a bigger number treatment just because the row happens to be about betting.", "section": "colors" },
+      { "name": "The One Accent Rule", "body": "Quiet Plum is the only non-semantic color in the system. If a new component wants \"brand personality,\" reach for plum at low dosage (an icon tint, a selected state), never a second accent hue.", "section": "colors" },
+      { "name": "The Weight-Not-Size Rule", "body": "Emphasis is 400→500 weight, not a bigger font. Nothing on any screen jumps more than ~8px between adjacent hierarchy levels.", "section": "typography" },
+      { "name": "The One Shadow Rule", "body": "There is exactly one shadow in this system, used identically on every card. If a component needs to feel \"more important,\" raise its type weight or add a status color, not a heavier shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep every dollar amount, percentage, and bet outcome inside the same three-color status vocabulary (success/warning/danger) — one meaning, one set of colors, everywhere.",
+      "Do route any new semantic color through constants/Colors.ts, light and dark variants both, before using it in a component.",
+      "Do reserve accent (Quiet Plum) for primary action, current selection, and interactive emphasis — never decoration, never a second brand color alongside it.",
+      "Do keep type hierarchy to weight changes (400/500) within the existing 11–22px range rather than introducing a larger display size.",
+      "Do apply the single Card Rest shadow via the shared cardShadow import from constants/Shadow.ts — no per-component shadow tuning, no redeclaring the values inline.",
+      "Do pair every status color with a label or icon, never color alone, per PRODUCT.md's accessibility requirement."
+    ],
+    "donts": [
+      "Don't introduce a navy-and-teal or gradient-metric \"generic fintech\" look — no gradient fills, no stacked hero-KPI cards, no Mint/Copilot-style dashboard chrome.",
+      "Don't give the betting category louder, brighter, or more celebratory styling than any other budget category — no neon badges, no sportsbook-style odds chips, no confetti.",
+      "Don't hardcode a new color directly in a component's StyleSheet — route it through constants/Colors.ts first, the way edge/edgeBg/edgeBorder now replace the emerald ParlayCard/GameCard used to hardcode.",
+      "Don't reach for blue as a second accent, or as a fallback if plum ever feels \"too bold\" — blue is the generic-fintech default this system explicitly moved away from.",
+      "Don't stack more than one shadow value on a card, or add a shadow to a badge/pill — Card Rest is a card-only treatment."
+    ]
+  }
+}
