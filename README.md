@@ -72,6 +72,8 @@ lib/
 - Recent bets — last 5 logged bets with status (pending/won/lost), tapping "+ Log a bet" opens the quick-entry modal
 - Best-card tip — "best card for [category] right now," pulled from the rewards tracker's proactive lookup
 - Trend stats — net bet profit vs. bank net cash flow for the current month, shown side by side since the backend deliberately keeps these as two separate numbers (they can diverge — see backend README Section 3.2)
+- Recurring charges card — detected subscriptions/recurring merchants with monthly total, interval, and an inactive tag for ones that have stopped
+- Expiring rewards-rate banner — warns when a rotating-category rate (e.g. 5x groceries) is ending within 45 days
 
 **Log a bet** (`app/modal.tsx`): sportsbook, bet type (single/parlay), stake, potential payout, and a dynamic list of per-leg detail (player, stat type, line, side, odds) — matches the backend's quick-entry design goal of under 15 seconds per bet. A "Tonight's edges (from playstat)" panel lists today's positive-edge legs from the [playstat](https://github.com/aayushpokhrel1/Playstat) project's `/edges` endpoint (player, stat, line, side, odds) — tapping "+ Add" pre-fills a leg instead of typing it by hand.
 

@@ -5,7 +5,9 @@ import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet } from 'react
 import { BestCardTip } from '@/components/budget/BestCardTip';
 import { BudgetPeriodCard } from '@/components/budget/BudgetPeriodCard';
 import { CategoryTile } from '@/components/budget/CategoryTile';
+import { ExpiringRatesBanner } from '@/components/budget/ExpiringRatesBanner';
 import { RecentBets } from '@/components/budget/RecentBets';
+import { RecurringCharges } from '@/components/budget/RecurringCharges';
 import { TrendStats } from '@/components/budget/TrendStats';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
@@ -18,7 +20,9 @@ import {
   useBetsTrend,
   useBudgetPeriods,
   useCategories,
+  useExpiringRates,
   useRecomputeBudgetPeriods,
+  useRecurringCharges,
 } from '@/lib/queries';
 
 export default function BudgetScreen() {
@@ -35,6 +39,8 @@ export default function BudgetScreen() {
   const bets = useBets();
   const trend = useBetsTrend(start, end);
   const accounts = useAccounts();
+  const recurringCharges = useRecurringCharges();
+  const expiringRates = useExpiringRates();
 
   // Ensures every category has an up-to-date budget_period row as soon as
   // this screen is viewed, rather than only after a sync/categorization
@@ -63,6 +69,8 @@ export default function BudgetScreen() {
     bets.refetch();
     trend.refetch();
     bestCard.refetch();
+    recurringCharges.refetch();
+    expiringRates.refetch();
   };
 
   if (isLoading) {
@@ -82,6 +90,8 @@ export default function BudgetScreen() {
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetchAll} />}
     >
       <Text style={styles.header}>Budget</Text>
+
+      <ExpiringRatesBanner data={expiringRates.data} />
 
       {accounts.data?.length === 0 && (
         <View style={[styles.nudge, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -114,6 +124,8 @@ export default function BudgetScreen() {
       {tipCategory && bestCard.data && <BestCardTip category={tipCategory} result={bestCard.data} />}
 
       <TrendStats month={trend.data?.by_month.find((m) => m.month === month)} />
+
+      <RecurringCharges data={recurringCharges.data} />
     </ScrollView>
   );
 }

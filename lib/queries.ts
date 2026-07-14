@@ -93,6 +93,17 @@ export function useAccounts() {
   return useQuery({ queryKey: ['accounts'], queryFn: api.plaid.accounts.list });
 }
 
+export function useRecurringCharges() {
+  return useQuery({ queryKey: ['recurring-charges'], queryFn: api.plaid.recurringCharges });
+}
+
+export function useExpiringRates(withinDays = 45) {
+  return useQuery({
+    queryKey: ['expiring-rates', withinDays],
+    queryFn: () => api.rewards.expiringRates(withinDays),
+  });
+}
+
 export function useTransactions(filters: TransactionFilters = {}) {
   return useQuery({
     queryKey: ['transactions', filters],
