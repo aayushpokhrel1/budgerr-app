@@ -3,17 +3,30 @@ import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet } from 'react
 
 import { BudgetPeriodCard } from '@/components/budget/BudgetPeriodCard';
 import { GameCard } from '@/components/tonight/GameCard';
+import { ParlayCard } from '@/components/tonight/ParlayCard';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { PlaystatEdge } from '@/lib/playstat';
+import { PlaystatEdge, PlaystatGamePrediction } from '@/lib/playstat';
 import {
   currentMonth,
   useBudgetPeriods,
   useCategories,
-  usePlaystatTonightsEdges,
-  usePlaystatTonightsGames,
+  usePlaystatEdges,
+  usePlaystatGamePredictions,
+  usePlaystatParlays,
+  usePlaystatSlate,
 } from '@/lib/queries';
+
+function slateHeading(date: string, isToday: boolean, count: number): string {
+  if (isToday) return `Tonight's slate (${count})`;
+  const day = new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  return `Next slate — ${day} (${count})`;
+}
 
 export default function TonightScreen() {
   const theme = Colors[useColorScheme()];
@@ -21,8 +34,10 @@ export default function TonightScreen() {
 
   const categories = useCategories();
   const budgetPeriods = useBudgetPeriods(month);
-  const games = usePlaystatTonightsGames();
-  const edges = usePlaystatTonightsEdges();
+  const slate = usePlaystatSlate();
+  const edges = usePlaystatEdges(slate.data?.date);
+  const gamePredictions = usePlaystatGamePredictions(slate.data?.date);
+  const parlays = usePlaystatParlays();
 
   const bettingCategory = categories.data?.find((c) => c.is_betting_category);
   const bettingPeriod = bettingCategory
@@ -39,14 +54,24 @@ export default function TonightScreen() {
     return map;
   }, [edges.data]);
 
-  const isLoading = categories.isLoading || budgetPeriods.isLoading || games.isLoading;
-  const isRefetching = categories.isFetching || budgetPeriods.isFetching || games.isFetching;
+  const firstInningByGame = useMemo(() => {
+    const map = new Map<number, PlaystatGamePrediction>();
+    for (const pred of gamePredictions.data ?? []) {
+      if (pred.market === 'first_inning_runs') map.set(pred.game_id, pred);
+    }
+    return map;
+  }, [gamePredictions.data]);
+
+  const isLoading = categories.isLoading || budgetPeriods.isLoading || slate.isLoading;
+  const isRefetching = categories.isFetching || budgetPeriods.isFetching || slate.isFetching;
 
   const refetchAll = () => {
     categories.refetch();
     budgetPeriods.refetch();
-    games.refetch();
+    slate.refetch();
     edges.refetch();
+    gamePredictions.refetch();
+    parlays.refetch();
   };
 
   if (isLoading) {
@@ -56,6 +81,8 @@ export default function TonightScreen() {
       </View>
     );
   }
+
+  const games = slate.data?.games ?? [];
 
   return (
     <ScrollView
@@ -69,16 +96,33 @@ export default function TonightScreen() {
         <BudgetPeriodCard category={bettingCategory} period={bettingPeriod} />
       )}
 
-      <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-        Tonight&apos;s slate{games.data ? ` (${games.data.length})` : ''}
-      </Text>
-
-      {games.data?.length === 0 && (
-        <Text style={{ color: theme.textMuted, fontSize: 13 }}>No games tonight.</Text>
+      <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Recommended parlays</Text>
+      {(parlays.data?.length ?? 0) === 0 ? (
+        <Text style={{ color: theme.textMuted, fontSize: 13 }}>
+          No parlay recommendations yet — the optimizer runs daily at 8:30am and needs a
+          multi-game slate with lines.
+        </Text>
+      ) : (
+        parlays.data?.map((parlay) => <ParlayCard key={parlay.parlay_id} parlay={parlay} />)
       )}
 
-      {games.data?.map((game) => (
-        <GameCard key={game.game_id} game={game} edges={edgesByGame.get(game.game_id) ?? []} />
+      <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+        {slate.data ? slateHeading(slate.data.date, slate.data.isToday, games.length) : ''}
+      </Text>
+
+      {games.length === 0 && (
+        <Text style={{ color: theme.textMuted, fontSize: 13 }}>
+          No games scheduled in the next week.
+        </Text>
+      )}
+
+      {games.map((game) => (
+        <GameCard
+          key={game.game_id}
+          game={game}
+          edges={edgesByGame.get(game.game_id) ?? []}
+          firstInning={firstInningByGame.get(game.game_id)}
+        />
       ))}
     </ScrollView>
   );

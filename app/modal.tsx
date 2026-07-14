@@ -13,7 +13,7 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BetLegInput, BetType } from '@/lib/api';
 import { PlaystatEdge } from '@/lib/playstat';
-import { useCreateBet, usePlaystatTonightsEdges } from '@/lib/queries';
+import { useCreateBet, usePlaystatEdges, usePlaystatSlate } from '@/lib/queries';
 
 interface LegDraft {
   player_name: string;
@@ -29,7 +29,8 @@ export default function LogBetModal() {
   const theme = Colors[useColorScheme()];
   const router = useRouter();
   const createBet = useCreateBet();
-  const tonightsEdges = usePlaystatTonightsEdges();
+  const slate = usePlaystatSlate();
+  const tonightsEdges = usePlaystatEdges(slate.data?.date);
 
   const [sportsbook, setSportsbook] = useState('');
   const [betType, setBetType] = useState<BetType>('single');

@@ -3,15 +3,23 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { PlaystatEdge, PlaystatGame } from '@/lib/playstat';
+import { PlaystatEdge, PlaystatGame, PlaystatGamePrediction } from '@/lib/playstat';
 
 function statusLabel(status: string | null): string {
-  if (!status || status === 'NS') return 'Upcoming';
+  if (!status || status === 'NS' || status === 'S') return 'Upcoming';
   if (status === 'FT' || status === 'AOT') return 'Final';
   return status;
 }
 
-export function GameCard({ game, edges }: { game: PlaystatGame; edges: PlaystatEdge[] }) {
+export function GameCard({
+  game,
+  edges,
+  firstInning,
+}: {
+  game: PlaystatGame;
+  edges: PlaystatEdge[];
+  firstInning?: PlaystatGamePrediction;
+}) {
   const theme = Colors[useColorScheme()];
   const label = statusLabel(game.status);
   const isFinal = label === 'Final';
@@ -28,6 +36,21 @@ export function GameCard({ game, edges }: { game: PlaystatGame; edges: PlaystatE
           </Text>
         </View>
       </View>
+
+      {firstInning && (
+        <Text style={[styles.edgeRow, { color: theme.textSecondary, marginTop: 8 }]}>
+          1st inning under {firstInning.line_value} runs:{' '}
+          <Text style={{ color: '#059669', fontWeight: '500' }}>
+            {Math.round(firstInning.prob_under * 100)}%
+          </Text>
+          {firstInning.book_under_odds != null && (
+            <Text>
+              {' '}· book {firstInning.book_under_odds > 0 ? '+' : ''}
+              {firstInning.book_under_odds} u{firstInning.book_line_value}
+            </Text>
+          )}
+        </Text>
+      )}
 
       {edges.length > 0 && (
         <View style={styles.edgesList}>

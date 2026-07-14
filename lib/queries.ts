@@ -57,12 +57,28 @@ export function useSettleBet() {
   });
 }
 
-export function usePlaystatTonightsEdges() {
-  return useQuery({ queryKey: ['playstat-edges-tonight'], queryFn: playstatApi.edges.listTonight });
+export function usePlaystatSlate() {
+  return useQuery({ queryKey: ['playstat-slate'], queryFn: playstatApi.slate.next });
 }
 
-export function usePlaystatTonightsGames() {
-  return useQuery({ queryKey: ['playstat-games-tonight'], queryFn: playstatApi.games.listTonight });
+export function usePlaystatEdges(date: string | undefined) {
+  return useQuery({
+    queryKey: ['playstat-edges', date],
+    queryFn: () => playstatApi.edges.listForDate(date!),
+    enabled: !!date,
+  });
+}
+
+export function usePlaystatGamePredictions(date: string | undefined) {
+  return useQuery({
+    queryKey: ['playstat-game-predictions', date],
+    queryFn: () => playstatApi.gamePredictions.listForDate(date!),
+    enabled: !!date,
+  });
+}
+
+export function usePlaystatParlays() {
+  return useQuery({ queryKey: ['playstat-parlays'], queryFn: () => playstatApi.parlays.list() });
 }
 
 export function useAccounts() {
