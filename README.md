@@ -77,6 +77,8 @@ lib/
 
 **Log as paper bet** (`components/tonight/ParlayCard.tsx`, on the Tonight tab): one tap logs a recommended parlay as a hypothetical bet (`sportsbook: "paper"`, `is_paper: true`, $10 default stake) without leaving the card, carrying each leg's `model_prob` from the playstat edge for later accuracy tracking. Paper bets auto-settle like real ones but are excluded from real-money P/L on the backend, and show a "PAPER" badge in the Recent bets list.
 
+**Analytics tab** (`app/(tabs)/analytics.tsx`): a real/paper segmented toggle over settled-bet performance from the backend's `/bets/analytics` endpoint — overall W-L-P record, staked, net profit, and ROI, plus breakdowns by sportsbook, bet type, and stat type, and a model-calibration section (predicted vs. actual hit rate, overall and per probability bucket) rendered as paired bars.
+
 **Not built yet**:
 - Bet settlement (won/lost/push) from the app — currently only doable via the backend API directly
 - A Stats tab (ties into the separate basketball analytics project once that's further along)

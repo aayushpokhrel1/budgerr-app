@@ -123,6 +123,55 @@ export interface TransactionFilters {
   limit?: number;
 }
 
+export type AnalyticsScope = 'real' | 'paper';
+
+export interface AnalyticsSummary {
+  settled: number;
+  wins: number;
+  losses: number;
+  pushes: number;
+  total_staked: number;
+  net_profit: number;
+  roi: number | null;
+}
+
+export interface AnalyticsBreakdown extends AnalyticsSummary {
+  key: string;
+}
+
+export interface AnalyticsStatType {
+  key: string;
+  legs: number;
+  won: number;
+  lost: number;
+  pushed: number;
+  hit_rate: number | null;
+}
+
+export interface CalibrationBucket {
+  lo: number;
+  hi: number;
+  legs: number;
+  predicted: number | null;
+  actual: number | null;
+}
+
+export interface Calibration {
+  legs: number;
+  overall_predicted: number | null;
+  overall_actual: number | null;
+  buckets: CalibrationBucket[];
+}
+
+export interface BetAnalytics {
+  scope: AnalyticsScope;
+  overall: AnalyticsSummary;
+  by_sportsbook: AnalyticsBreakdown[];
+  by_bet_type: AnalyticsBreakdown[];
+  by_stat_type: AnalyticsStatType[];
+  calibration: Calibration;
+}
+
 export const api = {
   bets: {
     list: (status?: BetStatus) =>
@@ -136,6 +185,8 @@ export const api = {
       }),
     trend: (start: string, end: string) =>
       request<{ by_month: MonthlyNetResult[] }>(`/bets/trend?start=${start}&end=${end}`),
+    analytics: (scope: AnalyticsScope = 'real') =>
+      request<BetAnalytics>(`/bets/analytics?scope=${scope}`),
   },
   categories: {
     list: () => request<Category[]>('/categories'),

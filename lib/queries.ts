@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { api, BetInput, BetStatus, TransactionFilters } from './api';
+import { AnalyticsScope, api, BetInput, BetStatus, TransactionFilters } from './api';
 import { playstatApi } from './playstat';
 
 export function currentMonth(): string {
@@ -25,6 +25,10 @@ export function useBets(status?: BetStatus) {
 
 export function useBetsTrend(start: string, end: string) {
   return useQuery({ queryKey: ['bets-trend', start, end], queryFn: () => api.bets.trend(start, end) });
+}
+
+export function useBetAnalytics(scope: AnalyticsScope = 'real') {
+  return useQuery({ queryKey: ['bets-analytics', scope], queryFn: () => api.bets.analytics(scope) });
 }
 
 export function useBestCard(categoryId: number | null) {

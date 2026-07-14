@@ -83,6 +83,19 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          title: 'Analytics',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{ ios: 'chart.bar', android: 'bar_chart', web: 'bar_chart' }}
+              tintColor={color}
+              size={28}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
