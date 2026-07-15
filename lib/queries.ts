@@ -31,6 +31,10 @@ export function useBetAnalytics(scope: AnalyticsScope = 'real') {
   return useQuery({ queryKey: ['bets-analytics', scope], queryFn: () => api.bets.analytics(scope) });
 }
 
+export function useBankroll(scope: AnalyticsScope = 'real') {
+  return useQuery({ queryKey: ['bets-bankroll', scope], queryFn: () => api.bets.bankroll(scope) });
+}
+
 export function useBestCard(categoryId: number | null) {
   return useQuery({
     queryKey: ['best-card', categoryId],

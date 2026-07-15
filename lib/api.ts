@@ -172,6 +172,36 @@ export interface BetAnalytics {
   calibration: Calibration;
 }
 
+export interface BankrollPoint {
+  date: string;
+  net: number;
+  cumulative: number;
+}
+
+export interface BankrollResponse {
+  scope: AnalyticsScope;
+  points: BankrollPoint[];
+  max_drawdown: number;
+  longest_losing_streak: number;
+}
+
+export interface ParsedBetLeg {
+  player_name: string | null;
+  stat_type: string | null;
+  line_value: number | null;
+  side: string | null;
+  odds: number | null;
+}
+
+export interface ParsedSlip {
+  sportsbook: string | null;
+  bet_type: BetType | null;
+  stake: number | null;
+  potential_payout: number | null;
+  legs: ParsedBetLeg[] | null;
+  note: string | null;
+}
+
 export interface RecurringCharge {
   merchant_name: string;
   last_amount: number;
@@ -219,6 +249,25 @@ export const api = {
       request<{ by_month: MonthlyNetResult[] }>(`/bets/trend?start=${start}&end=${end}`),
     analytics: (scope: AnalyticsScope = 'real') =>
       request<BetAnalytics>(`/bets/analytics?scope=${scope}`),
+    bankroll: (scope: AnalyticsScope = 'real') =>
+      request<BankrollResponse>(`/bets/bankroll?scope=${scope}`),
+    parseSlip: async (file: { uri: string; name: string; type: string }): Promise<ParsedSlip> => {
+      const form = new FormData();
+      // React Native FormData expects the {uri, name, type} triple rather
+      // than a File/Blob instance.
+      form.append('file', file as unknown as Blob);
+      const res = await fetch(`${API_URL}/bets/parse-slip`, {
+        method: 'POST',
+        body: form,
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const err = new Error(body.detail ?? res.statusText) as Error & { status?: number };
+        err.status = res.status;
+        throw err;
+      }
+      return res.json();
+    },
   },
   categories: {
     list: () => request<Category[]>('/categories'),

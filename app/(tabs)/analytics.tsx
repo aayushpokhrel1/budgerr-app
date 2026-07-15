@@ -5,8 +5,8 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { cardShadow } from '@/constants/Shadow';
 import { useColorScheme } from '@/components/useColorScheme';
-import { AnalyticsBreakdown, AnalyticsScope, AnalyticsStatType, CalibrationBucket } from '@/lib/api';
-import { useBetAnalytics } from '@/lib/queries';
+import { AnalyticsBreakdown, AnalyticsScope, AnalyticsStatType, BankrollPoint, CalibrationBucket } from '@/lib/api';
+import { useBankroll, useBetAnalytics } from '@/lib/queries';
 
 function pct(value: number | null, digits = 1): string {
   if (value === null || value === undefined) return '—';
@@ -21,6 +21,7 @@ export default function AnalyticsScreen() {
   const theme = Colors[useColorScheme()];
   const [scope, setScope] = useState<AnalyticsScope>('real');
   const analytics = useBetAnalytics(scope);
+  const bankroll = useBankroll(scope);
 
   if (analytics.isLoading) {
     return (
@@ -62,6 +63,8 @@ export default function AnalyticsScreen() {
           </Pressable>
         ))}
       </View>
+
+      <BankrollCard data={bankroll.data} isLoading={bankroll.isLoading} scope={scope} theme={theme} />
 
       {isEmpty && (
         <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }, cardShadow]}>
@@ -137,6 +140,82 @@ export default function AnalyticsScreen() {
         </>
       )}
     </ScrollView>
+  );
+}
+
+function BankrollCard({
+  data,
+  isLoading,
+  scope,
+  theme,
+}: {
+  data: import('@/lib/api').BankrollResponse | undefined;
+  isLoading: boolean;
+  scope: AnalyticsScope;
+  theme: (typeof Colors)['light'];
+}) {
+  if (isLoading || !data) return null;
+  const points = data.points;
+  const ending = points.length > 0 ? points[points.length - 1].cumulative : 0;
+  const endColor = ending >= 0 ? theme.success : theme.danger;
+  const maxAbs = Math.max(1, ...points.map((p) => Math.abs(p.cumulative)));
+
+  return (
+    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }, cardShadow]}>
+      <View style={[styles.calibHeaderRow, { backgroundColor: 'transparent' }]}>
+        <Text style={styles.sectionTitle}>Bankroll ({scope})</Text>
+        {points.length > 0 && (
+          <Text style={{ color: endColor, fontSize: 15, fontWeight: '600' }}>
+            {ending >= 0 ? '+' : '-'}${Math.abs(ending).toFixed(2)}
+          </Text>
+        )}
+      </View>
+      {points.length === 0 ? (
+        <Text style={{ color: theme.textMuted, fontSize: 13 }}>
+          No settled bets yet — the bankroll curve appears once bets settle.
+        </Text>
+      ) : (
+        <>
+          {/* Plain-View bar chart: one column per settled day, scaled around a
+              zero baseline (react-native-svg isn't a dependency). */}
+          <View style={[styles.bankrollChart, { backgroundColor: 'transparent' }]}>
+            {points.map((p) => {
+              const h = Math.max(2, (Math.abs(p.cumulative) / maxAbs) * 48);
+              const up = p.cumulative >= 0;
+              return (
+                <View key={p.date} style={[styles.bankrollCol, { backgroundColor: 'transparent' }]}>
+                  <View style={[styles.bankrollHalf, { backgroundColor: 'transparent' }]}>
+                    {up && (
+                      <View
+                        style={{ height: h, backgroundColor: theme.success, borderRadius: 2, alignSelf: 'stretch', marginTop: 'auto' }}
+                      />
+                    )}
+                  </View>
+                  <View style={[styles.bankrollBaseline, { backgroundColor: theme.border }]} />
+                  <View style={[styles.bankrollHalf, { backgroundColor: 'transparent' }]}>
+                    {!up && (
+                      <View style={{ height: h, backgroundColor: theme.danger, borderRadius: 2, alignSelf: 'stretch' }} />
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+          <View style={[styles.row, { backgroundColor: 'transparent' }]}>
+            <Text style={{ color: theme.textMuted, fontSize: 13 }}>Max drawdown</Text>
+            <Text style={{ color: theme.text, fontSize: 13, fontWeight: '500' }}>
+              ${data.max_drawdown.toFixed(2)}
+            </Text>
+          </View>
+          <View style={[styles.row, { backgroundColor: 'transparent' }]}>
+            <Text style={{ color: theme.textMuted, fontSize: 13 }}>Longest losing streak</Text>
+            <Text style={{ color: theme.text, fontSize: 13, fontWeight: '500' }}>
+              {data.longest_losing_streak}
+            </Text>
+          </View>
+        </>
+      )}
+    </View>
   );
 }
 
@@ -302,4 +381,8 @@ const styles = StyleSheet.create({
   calibHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   barTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
   barFill: { height: 6, borderRadius: 3 },
+  bankrollChart: { flexDirection: 'row', alignItems: 'stretch', gap: 2, height: 100, marginBottom: 8 },
+  bankrollCol: { flex: 1 },
+  bankrollHalf: { flex: 1, justifyContent: 'flex-start' },
+  bankrollBaseline: { height: 1 },
 });
