@@ -1,9 +1,17 @@
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8001';
 
+// Single source for the backend API key. Empty string (harmless) when unset,
+// e.g. while backend auth is disabled.
+export const BUDGERR_API_KEY = process.env.EXPO_PUBLIC_BUDGERR_API_KEY ?? '';
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+      'X-API-Key': BUDGERR_API_KEY,
+    },
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -258,6 +266,7 @@ export const api = {
       form.append('file', file as unknown as Blob);
       const res = await fetch(`${API_URL}/bets/parse-slip`, {
         method: 'POST',
+        headers: { 'X-API-Key': BUDGERR_API_KEY },
         body: form,
       });
       if (!res.ok) {
