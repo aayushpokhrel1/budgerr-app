@@ -108,7 +108,12 @@ export default function TonightScreen() {
         </Text>
       ) : (
         parlays.data?.map((parlay) => (
-          <ParlayCard key={parlay.parlay_id} parlay={parlay} edges={allEdges.data ?? []} />
+          <ParlayCard
+            key={parlay.parlay_id}
+            parlay={parlay}
+            edges={allEdges.data ?? []}
+            remainingBudget={bettingPeriod?.remaining ?? 0}
+          />
         ))
       )}
 

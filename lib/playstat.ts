@@ -1,4 +1,8 @@
-const PLAYSTAT_API_URL = process.env.EXPO_PUBLIC_PLAYSTAT_API_URL ?? 'http://localhost:8000';
+// Requests are forwarded through the Budgerr backend's /playstat proxy
+// (same sub-paths, key injected server-side) rather than hitting the
+// playstat service directly, so no playstat key ever lives in the client.
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8001';
+const PLAYSTAT_API_URL = process.env.EXPO_PUBLIC_PLAYSTAT_API_URL ?? `${API_URL}/playstat`;
 
 export interface PlaystatEdge {
   player_id: number;

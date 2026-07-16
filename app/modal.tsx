@@ -1,6 +1,8 @@
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -11,7 +13,7 @@ import {
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { BetLegInput, BetType } from '@/lib/api';
+import { api, BetLegInput, BetType } from '@/lib/api';
 import { PlaystatEdge } from '@/lib/playstat';
 import { useCreateBet, usePlaystatEdges, usePlaystatSlate } from '@/lib/queries';
 
@@ -37,6 +39,64 @@ export default function LogBetModal() {
   const [stake, setStake] = useState('');
   const [potentialPayout, setPotentialPayout] = useState('');
   const [legs, setLegs] = useState<LegDraft[]>([]);
+  const [importing, setImporting] = useState(false);
+
+  const importFromScreenshot = async () => {
+    if (importing) return;
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert('Permission needed', 'Photo library access is required to import a bet slip screenshot.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    setImporting(true);
+    try {
+      const parsed = await api.bets.parseSlip({
+        uri: asset.uri,
+        name: asset.fileName ?? 'bet-slip.jpg',
+        type: asset.mimeType ?? 'image/jpeg',
+      });
+
+      // Merge parsed fields into the existing draft for review — never
+      // auto-submit, since slip parsing can misread lines/odds.
+      if (parsed.sportsbook) setSportsbook(parsed.sportsbook);
+      if (parsed.bet_type) setBetType(parsed.bet_type);
+      if (parsed.stake != null) setStake(String(parsed.stake));
+      if (parsed.potential_payout != null) setPotentialPayout(String(parsed.potential_payout));
+      if (parsed.legs && parsed.legs.length > 0) {
+        setLegs((prev) => [
+          ...prev,
+          ...parsed.legs!.map((leg) => ({
+            player_name: leg.player_name ?? '',
+            stat_type: leg.stat_type ?? '',
+            line_value: leg.line_value != null ? String(leg.line_value) : '',
+            side: leg.side ?? '',
+            odds: leg.odds != null ? String(leg.odds) : '',
+          })),
+        ]);
+      }
+    } catch (err) {
+      const status = (err as Error & { status?: number }).status;
+      if (status === 501) {
+        Alert.alert(
+          'Import unavailable',
+          'Screenshot import needs ANTHROPIC_API_KEY set on the backend.'
+        );
+      } else {
+        Alert.alert('Import failed', 'Could not read that bet slip. Please enter the bet manually.');
+      }
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const updateLeg = (index: number, field: keyof LegDraft, value: string) => {
     setLegs((prev) => prev.map((leg, i) => (i === index ? { ...leg, [field]: value } : leg)));
@@ -82,6 +142,20 @@ export default function LogBetModal() {
 
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
+      <Pressable
+        style={[styles.importButton, { borderColor: theme.border }]}
+        onPress={importFromScreenshot}
+        disabled={importing}
+      >
+        {importing ? (
+          <ActivityIndicator size="small" color={theme.textSecondary} />
+        ) : (
+          <Text style={{ color: theme.tint, fontSize: 13, fontWeight: '500' }}>
+            Import from screenshot
+          </Text>
+        )}
+      </Pressable>
+
       <Text style={styles.label}>Sportsbook</Text>
       <TextInput
         style={[styles.input, { borderColor: theme.border, color: theme.text }]}
@@ -221,6 +295,12 @@ export default function LogBetModal() {
 
 const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 40 },
+  importButton: {
+    borderWidth: 0.5,
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
   label: { fontSize: 13, fontWeight: '500', marginBottom: 6, marginTop: 14 },
   input: { borderWidth: 0.5, borderRadius: 8, padding: 10, fontSize: 15 },
   typeRow: { flexDirection: 'row', gap: 8 },

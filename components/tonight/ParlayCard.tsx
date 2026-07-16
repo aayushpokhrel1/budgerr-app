@@ -6,6 +6,7 @@ import Colors from '@/constants/Colors';
 import { cardShadow } from '@/constants/Shadow';
 import { useColorScheme } from '@/components/useColorScheme';
 import { BetLegInput } from '@/lib/api';
+import { quarterKelly } from '@/lib/kelly';
 import { PlaystatEdge, PlaystatParlayLeg, PlaystatParlayRecommendation } from '@/lib/playstat';
 import { useCreateBet } from '@/lib/queries';
 
@@ -23,13 +24,21 @@ function edgeForLeg(leg: PlaystatParlayLeg, edges: PlaystatEdge[]): PlaystatEdge
 export function ParlayCard({
   parlay,
   edges = [],
+  remainingBudget = 0,
 }: {
   parlay: PlaystatParlayRecommendation;
   edges?: PlaystatEdge[];
+  remainingBudget?: number;
 }) {
   const theme = Colors[useColorScheme()];
   const createBet = useCreateBet();
   const [logged, setLogged] = useState(false);
+
+  const { suggested: kellyStake } = quarterKelly(
+    parlay.combined_odds,
+    parlay.joint_prob,
+    remainingBudget
+  );
 
   const logAsPaperBet = () => {
     if (createBet.isPending || logged) return;
@@ -89,6 +98,16 @@ export function ParlayCard({
           </Text>
         ))}
       </View>
+      {kellyStake > 0 && (
+        <View style={styles.kellyRow}>
+          <Text style={[styles.kellyText, { color: theme.text }]}>
+            ¼-Kelly stake: ${kellyStake.toFixed(2)}
+          </Text>
+          <Text style={[styles.kellyCaption, { color: theme.textMuted }]}>
+            Guidance only — sizing depends on model calibration, not a bet recommendation.
+          </Text>
+        </View>
+      )}
       <Pressable
         style={[
           styles.paperButton,
@@ -123,6 +142,9 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 11, fontWeight: '500' },
   legsList: { marginTop: 8, gap: 4 },
   legRow: { fontSize: 12 },
+  kellyRow: { marginTop: 8, gap: 2 },
+  kellyText: { fontSize: 12, fontWeight: '500' },
+  kellyCaption: { fontSize: 10 },
   paperButton: {
     marginTop: 10,
     borderWidth: 0.5,

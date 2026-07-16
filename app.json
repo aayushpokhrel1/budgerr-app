@@ -33,6 +33,12 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Budgerr uses your photos to import bet slips."
+        }
       ]
     ],
     "experiments": {
