@@ -67,6 +67,39 @@ export interface PlaystatParlayRecommendation {
   legs: PlaystatParlayLeg[];
 }
 
+export interface PlaystatBuilderLegBase {
+  game_id: number;
+  label: string;
+  side: 'over' | 'under';
+  line: number;
+  odds: number;
+  market_prob: number;
+  model_prob: number | null; // CONTEXT ONLY — never surfaced as edge/value
+}
+export interface PlaystatBuilderPlayerLeg extends PlaystatBuilderLegBase {
+  kind: 'player';
+  player_id: number;
+  stat_type: string;
+  market: null;
+}
+export interface PlaystatBuilderTeamLeg extends PlaystatBuilderLegBase {
+  kind: 'team';
+  player_id: null;
+  stat_type: null;
+  market: 'first_inning_runs' | 'f5_runs';
+}
+export type PlaystatBuilderLeg = PlaystatBuilderPlayerLeg | PlaystatBuilderTeamLeg;
+
+export interface PlaystatBuilderConstruction {
+  parlay_id: number;
+  created_at: string;
+  target_payout: number;
+  joint_prob: number;
+  combined_odds: number;
+  n_legs: number;
+  legs: PlaystatBuilderLeg[];
+}
+
 /** Tonight's slate + everything keyed to its date. During off-days (e.g. the
  * MLB All-Star break) fall forward to the next date with scheduled games, up
  * to a week out, so the view shows the next slate instead of a blank page. */
@@ -112,8 +145,14 @@ export const playstatApi = {
     listForDate: async (date: string): Promise<PlaystatGamePrediction[]> =>
       fetchJson<PlaystatGamePrediction[]>(`/game-predictions?date=${date}`),
   },
+  games: {
+    listForDate: (date: string): Promise<PlaystatGame[]> =>
+      fetchJson<PlaystatGame[]>(`/games?date=${date}`),
+  },
   parlays: {
     list: async (limit = 3): Promise<PlaystatParlayRecommendation[]> =>
       fetchJson<PlaystatParlayRecommendation[]>(`/parlay-recommendations?limit=${limit}`),
+    listBuilder: async (limit = 10): Promise<PlaystatBuilderConstruction[]> =>
+      fetchJson<PlaystatBuilderConstruction[]>(`/parlay-builder/saved?limit=${limit}`),
   },
 };

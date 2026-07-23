@@ -93,6 +93,21 @@ export function usePlaystatParlays() {
   return useQuery({ queryKey: ['playstat-parlays'], queryFn: () => playstatApi.parlays.list() });
 }
 
+export function usePlaystatBuilderParlays() {
+  return useQuery({
+    queryKey: ['playstat-builder-parlays'],
+    queryFn: () => playstatApi.parlays.listBuilder(),
+  });
+}
+
+export function usePlaystatGames(date: string | undefined) {
+  return useQuery({
+    queryKey: ['playstat-games', date],
+    queryFn: () => playstatApi.games.listForDate(date!),
+    enabled: !!date,
+  });
+}
+
 export function useAccounts() {
   return useQuery({ queryKey: ['accounts'], queryFn: api.plaid.accounts.list });
 }
