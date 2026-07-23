@@ -34,7 +34,7 @@ export function legDisplay(leg: PlaystatBuilderLeg, gamesById: Map<number, Plays
     const m = matchup(leg.game_id, gamesById);
     return `${m ? `${m} — ` : ''}${marketLabel(leg.market)} ${leg.side} ${leg.line}`;
   }
-  return `${playerNameFromLabel(leg)} ${leg.side} ${leg.stat_type}`;
+  return `${playerNameFromLabel(leg)} ${leg.side} ${leg.line} ${leg.stat_type}`;
 }
 
 export function hasTeamLeg(construction: PlaystatBuilderConstruction): boolean {
