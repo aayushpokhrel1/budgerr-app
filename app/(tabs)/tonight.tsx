@@ -2,20 +2,21 @@ import { useMemo } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 
 import { BudgetPeriodCard } from '@/components/budget/BudgetPeriodCard';
+import { BuilderParlayCard } from '@/components/tonight/BuilderParlayCard';
 import { GameCard } from '@/components/tonight/GameCard';
-import { ParlayCard } from '@/components/tonight/ParlayCard';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { PlaystatEdge, PlaystatGamePrediction } from '@/lib/playstat';
+import { isRunFullyPast, runDate, selectLatestRun } from '@/lib/builderParlays';
+import { PlaystatEdge, PlaystatGame, PlaystatGamePrediction } from '@/lib/playstat';
 import {
   currentMonth,
   useBudgetPeriods,
   useCategories,
-  usePlaystatAllEdges,
+  usePlaystatBuilderParlays,
   usePlaystatEdges,
   usePlaystatGamePredictions,
-  usePlaystatParlays,
+  usePlaystatGames,
   usePlaystatSlate,
 } from '@/lib/queries';
 
@@ -37,11 +38,28 @@ export default function TonightScreen() {
   const budgetPeriods = useBudgetPeriods(month);
   const slate = usePlaystatSlate();
   const edges = usePlaystatEdges(slate.data?.date);
-  // Parlay recommendations may target a later date than the displayed slate,
-  // so their line lookup uses the full current edge set, not the slate's date.
-  const allEdges = usePlaystatAllEdges();
   const gamePredictions = usePlaystatGamePredictions(slate.data?.date);
-  const parlays = usePlaystatParlays();
+
+  const builderParlays = usePlaystatBuilderParlays();
+  const latestRun = useMemo(
+    () => selectLatestRun(builderParlays.data ?? [], 4),
+    [builderParlays.data]
+  );
+  // Resolve builder-leg games from the builder RUN's own date (which can differ
+  // from the displayed slate) so matchups and settlement dates are correct.
+  const builderGames = usePlaystatGames(runDate(latestRun));
+  const builderGamesById = useMemo(() => {
+    const map = new Map<number, PlaystatGame>();
+    for (const game of builderGames.data ?? []) map.set(game.game_id, game);
+    return map;
+  }, [builderGames.data]);
+
+  const builderConstructions = useMemo(() => {
+    if (latestRun.length === 0) return [];
+    if (!builderGames.data) return []; // wait for the run's games before deciding
+    if (isRunFullyPast(latestRun, builderGamesById)) return []; // hide a stale past run
+    return latestRun;
+  }, [latestRun, builderGames.data, builderGamesById]);
 
   const bettingCategory = categories.data?.find((c) => c.is_betting_category);
   const bettingPeriod = bettingCategory
@@ -75,7 +93,8 @@ export default function TonightScreen() {
     slate.refetch();
     edges.refetch();
     gamePredictions.refetch();
-    parlays.refetch();
+    builderParlays.refetch();
+    builderGames.refetch();
   };
 
   if (isLoading) {
@@ -100,18 +119,17 @@ export default function TonightScreen() {
         <BudgetPeriodCard category={bettingCategory} period={bettingPeriod} />
       )}
 
-      <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Recommended parlays</Text>
-      {(parlays.data?.length ?? 0) === 0 ? (
+      <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Low-risk builder parlays</Text>
+      {builderConstructions.length === 0 ? (
         <Text style={{ color: theme.textMuted, fontSize: 13 }}>
-          No parlay recommendations yet — the optimizer runs daily at 8:30am and needs a
-          multi-game slate with lines.
+          No builder parlays yet — Playstat precomputes the low-risk parlay each evening.
         </Text>
       ) : (
-        parlays.data?.map((parlay) => (
-          <ParlayCard
-            key={parlay.parlay_id}
-            parlay={parlay}
-            edges={allEdges.data ?? []}
+        builderConstructions.map((construction) => (
+          <BuilderParlayCard
+            key={construction.parlay_id}
+            construction={construction}
+            gamesById={builderGamesById}
             remainingBudget={bettingPeriod?.remaining ?? 0}
           />
         ))
