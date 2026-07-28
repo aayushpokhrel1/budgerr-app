@@ -87,8 +87,8 @@ export function usePlaystatGamePredictions(date: string | undefined) {
 
 export function usePlaystatBuilderParlays() {
   return useQuery({
-    queryKey: ['playstat-builder-parlays'],
-    queryFn: () => playstatApi.parlays.listBuilder(),
+    queryKey: ['playstat-builder-parlays', 'all'],
+    queryFn: () => playstatApi.parlays.listBuilder(100, 'all'),
   });
 }
 

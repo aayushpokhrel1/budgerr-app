@@ -152,7 +152,12 @@ export const playstatApi = {
   parlays: {
     list: async (limit = 3): Promise<PlaystatParlayRecommendation[]> =>
       fetchJson<PlaystatParlayRecommendation[]>(`/parlay-recommendations?limit=${limit}`),
-    listBuilder: async (limit = 10): Promise<PlaystatBuilderConstruction[]> =>
-      fetchJson<PlaystatBuilderConstruction[]>(`/parlay-builder/saved?limit=${limit}`),
+    listBuilder: async (
+      limit = 10,
+      tier?: 'player' | 'team' | 'all'
+    ): Promise<PlaystatBuilderConstruction[]> =>
+      fetchJson<PlaystatBuilderConstruction[]>(
+        `/parlay-builder/saved?limit=${limit}${tier ? `&tier=${tier}` : ''}`
+      ),
   },
 };
