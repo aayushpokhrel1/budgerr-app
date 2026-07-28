@@ -7,7 +7,7 @@ import { GameCard } from '@/components/tonight/GameCard';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { isRunFullyPast, runDate, selectLatestRun } from '@/lib/builderParlays';
+import { hasTeamLeg, isRunFullyPast, runDate, selectLatestRun } from '@/lib/builderParlays';
 import { PlaystatEdge, PlaystatGame, PlaystatGamePrediction } from '@/lib/playstat';
 import {
   currentMonth,
@@ -40,13 +40,22 @@ export default function TonightScreen() {
   const edges = usePlaystatEdges(slate.data?.date);
   const gamePredictions = usePlaystatGamePredictions(slate.data?.date);
 
-  const builderParlays = usePlaystatBuilderParlays();
-  const latestRun = useMemo(
-    () => selectLatestRun(builderParlays.data ?? [], 4),
+  const builderParlays = usePlaystatBuilderParlays(); // ?tier=all combined feed
+
+  const playerCons = useMemo(
+    () => (builderParlays.data ?? []).filter((c) => !hasTeamLeg(c)),
     [builderParlays.data]
   );
-  // Resolve builder-leg games from the builder RUN's own date (which can differ
-  // from the displayed slate) so matchups and settlement dates are correct.
+  const teamCons = useMemo(
+    () => (builderParlays.data ?? []).filter((c) => hasTeamLeg(c)),
+    [builderParlays.data]
+  );
+
+  const latestRun = useMemo(() => selectLatestRun(playerCons, 4), [playerCons]);
+  const latestTeamRun = useMemo(() => selectLatestRun(teamCons, 4), [teamCons]);
+
+  // Resolve each section's games from its OWN run's date (player and team runs
+  // are typically different days).
   const builderGames = usePlaystatGames(runDate(latestRun));
   const builderGamesById = useMemo(() => {
     const map = new Map<number, PlaystatGame>();
@@ -54,12 +63,26 @@ export default function TonightScreen() {
     return map;
   }, [builderGames.data]);
 
+  const teamGames = usePlaystatGames(runDate(latestTeamRun));
+  const teamGamesById = useMemo(() => {
+    const map = new Map<number, PlaystatGame>();
+    for (const game of teamGames.data ?? []) map.set(game.game_id, game);
+    return map;
+  }, [teamGames.data]);
+
   const builderConstructions = useMemo(() => {
     if (latestRun.length === 0) return [];
     if (!builderGames.data) return []; // wait for the run's games before deciding
     if (isRunFullyPast(latestRun, builderGamesById)) return []; // hide a stale past run
     return latestRun;
   }, [latestRun, builderGames.data, builderGamesById]);
+
+  const teamConstructions = useMemo(() => {
+    if (latestTeamRun.length === 0) return [];
+    if (!teamGames.data) return [];
+    if (isRunFullyPast(latestTeamRun, teamGamesById)) return [];
+    return latestTeamRun;
+  }, [latestTeamRun, teamGames.data, teamGamesById]);
 
   const bettingCategory = categories.data?.find((c) => c.is_betting_category);
   const bettingPeriod = bettingCategory
@@ -95,6 +118,7 @@ export default function TonightScreen() {
     gamePredictions.refetch();
     builderParlays.refetch();
     builderGames.refetch();
+    teamGames.refetch();
   };
 
   if (isLoading) {
@@ -131,6 +155,28 @@ export default function TonightScreen() {
             construction={construction}
             gamesById={builderGamesById}
             remainingBudget={bettingPeriod?.remaining ?? 0}
+          />
+        ))
+      )}
+
+      <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+        Team markets (NRFI/F5) — higher variance
+      </Text>
+      <Text style={{ color: theme.textMuted, fontSize: 11, marginTop: -6, marginBottom: 10 }}>
+        ~30–50% to hit · logs as paper, won&apos;t auto-settle.
+      </Text>
+      {teamConstructions.length === 0 ? (
+        <Text style={{ color: theme.textMuted, fontSize: 13 }}>
+          No team-market parlays in tonight&apos;s build — the team tier is often empty.
+        </Text>
+      ) : (
+        teamConstructions.map((construction) => (
+          <BuilderParlayCard
+            key={construction.parlay_id}
+            construction={construction}
+            gamesById={teamGamesById}
+            remainingBudget={bettingPeriod?.remaining ?? 0}
+            variant="variance"
           />
         ))
       )}
