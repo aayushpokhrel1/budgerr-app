@@ -16,12 +16,18 @@ export function BuilderParlayCard({
   construction,
   gamesById,
   remainingBudget = 0,
+  variant = 'lowrisk',
 }: {
   construction: PlaystatBuilderConstruction;
   gamesById: Map<number, PlaystatGame>;
   remainingBudget?: number;
+  variant?: 'lowrisk' | 'variance';
 }) {
   const theme = Colors[useColorScheme()];
+  const isVariance = variant === 'variance';
+  const cardBorder = isVariance ? theme.warning : theme.edgeBorder;
+  const jointBadgeBg = isVariance ? theme.warningBg : theme.edgeBg;
+  const jointBadgeText = isVariance ? theme.warning : theme.edge;
   const createBet = useCreateBet();
   const [logged, setLogged] = useState(false);
 
@@ -40,7 +46,7 @@ export function BuilderParlayCard({
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.edgeBorder }]}>
+    <View style={[styles.card, { backgroundColor: theme.card, borderColor: cardBorder }]}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>
           {construction.n_legs}-leg · {construction.combined_odds.toFixed(2)}x
@@ -51,8 +57,8 @@ export function BuilderParlayCard({
               {construction.target_payout.toFixed(1)}x
             </Text>
           </View>
-          <View style={[styles.badge, { backgroundColor: theme.edgeBg }]}>
-            <Text style={[styles.badgeText, { color: theme.edge }]}>
+          <View style={[styles.badge, { backgroundColor: jointBadgeBg }]}>
+            <Text style={[styles.badgeText, { color: jointBadgeText }]}>
               {Math.round(construction.joint_prob * 100)}% to hit
             </Text>
           </View>
