@@ -69,22 +69,6 @@ export function usePlaystatSlate() {
   return useQuery({ queryKey: ['playstat-slate'], queryFn: playstatApi.slate.next });
 }
 
-export function usePlaystatEdges(date: string | undefined) {
-  return useQuery({
-    queryKey: ['playstat-edges', date],
-    queryFn: () => playstatApi.edges.listForDate(date!),
-    enabled: !!date,
-  });
-}
-
-export function usePlaystatGamePredictions(date: string | undefined) {
-  return useQuery({
-    queryKey: ['playstat-game-predictions', date],
-    queryFn: () => playstatApi.gamePredictions.listForDate(date!),
-    enabled: !!date,
-  });
-}
-
 export function usePlaystatBuilderParlays() {
   return useQuery({
     queryKey: ['playstat-builder-parlays', 'all'],

@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -14,8 +14,9 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { api, BetLegInput, BetType } from '@/lib/api';
-import { PlaystatEdge } from '@/lib/playstat';
-import { useCreateBet, usePlaystatEdges, usePlaystatSlate } from '@/lib/queries';
+import { PlaystatBuilderPlayerLeg } from '@/lib/playstat';
+import { distinctPlayerLegs, hasTeamLeg, playerNameFromLabel } from '@/lib/builderParlays';
+import { useCreateBet, usePlaystatBuilderParlays } from '@/lib/queries';
 
 interface LegDraft {
   player_name: string;
@@ -31,8 +32,11 @@ export default function LogBetModal() {
   const theme = Colors[useColorScheme()];
   const router = useRouter();
   const createBet = useCreateBet();
-  const slate = usePlaystatSlate();
-  const tonightsEdges = usePlaystatEdges(slate.data?.date);
+  const builderParlays = usePlaystatBuilderParlays();
+  const builderPicks = useMemo(() => {
+    const playerCons = (builderParlays.data ?? []).filter((c) => !hasTeamLeg(c));
+    return distinctPlayerLegs(playerCons);
+  }, [builderParlays.data]);
 
   const [sportsbook, setSportsbook] = useState('');
   const [betType, setBetType] = useState<BetType>('single');
@@ -102,15 +106,15 @@ export default function LogBetModal() {
     setLegs((prev) => prev.map((leg, i) => (i === index ? { ...leg, [field]: value } : leg)));
   };
 
-  const addLegFromEdge = (edge: PlaystatEdge) => {
+  const addLegFromBuilderLeg = (leg: PlaystatBuilderPlayerLeg) => {
     setLegs((prev) => [
       ...prev,
       {
-        player_name: edge.player_name,
-        stat_type: edge.stat_type,
-        line_value: String(edge.line_value),
-        side: edge.side,
-        odds: String(edge.odds),
+        player_name: playerNameFromLabel(leg),
+        stat_type: leg.stat_type,
+        line_value: String(leg.line),
+        side: leg.side,
+        odds: String(leg.odds),
       },
     ]);
   };
@@ -202,21 +206,24 @@ export default function LogBetModal() {
         onChangeText={setPotentialPayout}
       />
 
-      {tonightsEdges.data && tonightsEdges.data.length > 0 && (
+      {builderPicks.length > 0 && (
         <View style={[styles.edgesCard, { backgroundColor: theme.card }]}>
           <Text style={[styles.edgesTitle, { color: theme.textSecondary }]}>
-            Tonight&apos;s edges (from playstat)
+            Tonight&apos;s builder picks
           </Text>
-          {tonightsEdges.data.map((edge) => (
-            <View key={`${edge.player_id}-${edge.game_id}-${edge.stat_type}`} style={styles.edgeRow}>
+          {builderPicks.map((leg) => (
+            <View
+              key={`${leg.player_id}-${leg.game_id}-${leg.stat_type}-${leg.side}-${leg.line}`}
+              style={styles.edgeRow}
+            >
               <Text style={{ fontSize: 13, flex: 1 }} numberOfLines={1}>
-                {edge.player_name} {edge.side} {edge.line_value} {edge.stat_type}{' '}
+                {playerNameFromLabel(leg)} {leg.side} {leg.line} {leg.stat_type}{' '}
                 <Text style={{ color: theme.textMuted }}>
-                  ({edge.odds > 0 ? '+' : ''}
-                  {edge.odds})
+                  ({leg.odds > 0 ? '+' : ''}
+                  {leg.odds})
                 </Text>
               </Text>
-              <Pressable onPress={() => addLegFromEdge(edge)}>
+              <Pressable onPress={() => addLegFromBuilderLeg(leg)}>
                 <Text style={{ color: theme.tint, fontSize: 13 }}>+ Add</Text>
               </Pressable>
             </View>
