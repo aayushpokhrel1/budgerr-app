@@ -1,5 +1,5 @@
 import { BetInput, BetLegInput } from './api';
-import { PlaystatBuilderConstruction, PlaystatBuilderLeg, PlaystatGame } from './playstat';
+import { PlaystatBuilderConstruction, PlaystatBuilderLeg, PlaystatBuilderPlayerLeg, PlaystatBuilderTeamLeg, PlaystatGame } from './playstat';
 
 const MARKET_LABEL: Record<'first_inning_runs' | 'f5_runs', string> = {
   first_inning_runs: 'NRFI',
@@ -116,4 +116,65 @@ export function isRunFullyPast(
     .filter((g): g is PlaystatGame => !!g);
   if (games.length === 0) return false;
   return games.every((g) => !UPCOMING_STATUSES.has(g.status));
+}
+
+/** Stable identity for a player leg (dedup + slate-suppression key). */
+export function playerLegIdentity(leg: PlaystatBuilderPlayerLeg): string {
+  return `${leg.player_id}|${leg.stat_type}|${leg.side}|${leg.line}`;
+}
+
+/** Set of player-leg identities across the given constructions (e.g. the
+ *  top-N already shown in the section), for slate suppression. */
+export function playerLegKeys(constructions: PlaystatBuilderConstruction[]): Set<string> {
+  const keys = new Set<string>();
+  for (const c of constructions)
+    for (const leg of c.legs) if (leg.kind === 'player') keys.add(playerLegIdentity(leg));
+  return keys;
+}
+
+/** Deduped flat list of the LATEST player run's player legs (quick-entry picker). */
+export function distinctPlayerLegs(
+  playerConstructions: PlaystatBuilderConstruction[]
+): PlaystatBuilderPlayerLeg[] {
+  const run = selectLatestRun(playerConstructions, Infinity);
+  const seen = new Set<string>();
+  const out: PlaystatBuilderPlayerLeg[] = [];
+  for (const c of run)
+    for (const leg of c.legs)
+      if (leg.kind === 'player') {
+        const k = playerLegIdentity(leg);
+        if (!seen.has(k)) {
+          seen.add(k);
+          out.push(leg);
+        }
+      }
+  return out;
+}
+
+/** Latest player run's distinct player legs grouped by game_id, minus excluded keys. */
+export function playerLegsByGame(
+  playerConstructions: PlaystatBuilderConstruction[],
+  excludeKeys: ReadonlySet<string> = new Set()
+): Map<number, PlaystatBuilderPlayerLeg[]> {
+  const map = new Map<number, PlaystatBuilderPlayerLeg[]>();
+  for (const leg of distinctPlayerLegs(playerConstructions)) {
+    if (excludeKeys.has(playerLegIdentity(leg))) continue;
+    const list = map.get(leg.game_id) ?? [];
+    list.push(leg);
+    map.set(leg.game_id, list);
+  }
+  return map;
+}
+
+/** Latest team run's first-inning (NRFI) leg per game_id. */
+export function firstInningLegByGame(
+  teamConstructions: PlaystatBuilderConstruction[]
+): Map<number, PlaystatBuilderTeamLeg> {
+  const map = new Map<number, PlaystatBuilderTeamLeg>();
+  const run = selectLatestRun(teamConstructions, Infinity);
+  for (const c of run)
+    for (const leg of c.legs)
+      if (leg.kind === 'team' && leg.market === 'first_inning_runs' && !map.has(leg.game_id))
+        map.set(leg.game_id, leg);
+  return map;
 }
