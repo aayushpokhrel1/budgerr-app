@@ -4,7 +4,8 @@ import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { cardShadow } from '@/constants/Shadow';
 import { useColorScheme } from '@/components/useColorScheme';
-import { PlaystatEdge, PlaystatGame, PlaystatGamePrediction } from '@/lib/playstat';
+import { PlaystatBuilderPlayerLeg, PlaystatBuilderTeamLeg, PlaystatGame } from '@/lib/playstat';
+import { marketLabel, playerNameFromLabel } from '@/lib/builderParlays';
 
 function statusLabel(status: string | null): string {
   if (!status || status === 'NS' || status === 'S') return 'Upcoming';
@@ -14,12 +15,12 @@ function statusLabel(status: string | null): string {
 
 export function GameCard({
   game,
-  edges,
-  firstInning,
+  playerLegs,
+  firstInningLeg,
 }: {
   game: PlaystatGame;
-  edges: PlaystatEdge[];
-  firstInning?: PlaystatGamePrediction;
+  playerLegs: PlaystatBuilderPlayerLeg[];
+  firstInningLeg?: PlaystatBuilderTeamLeg;
 }) {
   const theme = Colors[useColorScheme()];
   const label = statusLabel(game.status);
@@ -38,33 +39,31 @@ export function GameCard({
         </View>
       </View>
 
-      {firstInning && (
+      {firstInningLeg && (
         <Text style={[styles.edgeRow, { color: theme.textSecondary, marginTop: 8 }]}>
-          1st inning under {firstInning.line_value} runs:{' '}
-          <Text style={{ color: theme.edge, fontWeight: '500' }}>
-            {Math.round(firstInning.prob_under * 100)}%
+          {marketLabel(firstInningLeg.market)} {firstInningLeg.side} {firstInningLeg.line}:{' '}
+          <Text style={{ color: theme.textSecondary, fontWeight: '500' }}>
+            {Math.round(firstInningLeg.market_prob * 100)}%
           </Text>
-          {firstInning.book_under_odds != null && (
-            <Text>
-              {' '}· book {firstInning.book_under_odds > 0 ? '+' : ''}
-              {firstInning.book_under_odds} u{firstInning.book_line_value}
-            </Text>
-          )}
+          <Text style={{ color: theme.tint }}>
+            {' '}({firstInningLeg.odds > 0 ? '+' : ''}
+            {firstInningLeg.odds})
+          </Text>
         </Text>
       )}
 
-      {edges.length > 0 && (
+      {playerLegs.length > 0 && (
         <View style={styles.edgesList}>
-          {edges.map((edge) => (
+          {playerLegs.map((leg) => (
             <Text
-              key={`${edge.player_id}-${edge.stat_type}`}
+              key={`${leg.player_id}-${leg.stat_type}-${leg.side}-${leg.line}`}
               style={[styles.edgeRow, { color: theme.textSecondary }]}
               numberOfLines={1}
             >
-              {edge.player_name} {edge.side} {edge.line_value} {edge.stat_type}{' '}
+              {playerNameFromLabel(leg)} {leg.side} {leg.line} {leg.stat_type}{' '}
               <Text style={{ color: theme.tint }}>
-                ({edge.odds > 0 ? '+' : ''}
-                {edge.odds})
+                ({leg.odds > 0 ? '+' : ''}
+                {leg.odds})
               </Text>
             </Text>
           ))}
