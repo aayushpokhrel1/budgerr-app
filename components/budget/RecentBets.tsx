@@ -5,12 +5,13 @@ import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Bet } from '@/lib/api';
+import { betLegMarketLabel } from '@/lib/builderParlays';
 
 function legsSummary(bet: Bet): string | null {
   if (bet.legs.length === 0) return null;
   return bet.legs
     .map((leg) => {
-      const parts = [leg.player_name, leg.side, leg.line_value, leg.stat_type].filter(Boolean);
+      const parts = [leg.player_name, leg.side, leg.line_value, betLegMarketLabel(leg.market) ?? leg.stat_type].filter(Boolean);
       return parts.join(' ');
     })
     .join(', ');

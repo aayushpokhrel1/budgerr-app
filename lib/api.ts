@@ -32,6 +32,9 @@ export interface BetLeg {
   odds: number | null;
   leg_status: BetStatus;
   model_prob: number | null;
+  game_id: number | null;
+  player_id: number | null;
+  market: string | null;
 }
 
 export interface Bet {
@@ -55,6 +58,9 @@ export interface BetLegInput {
   side?: string;
   odds?: number;
   model_prob?: number | null;
+  game_id?: number;
+  player_id?: number;
+  market?: string;
 }
 
 export interface BetInput {

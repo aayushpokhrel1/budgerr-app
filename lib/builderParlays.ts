@@ -10,6 +10,13 @@ export function marketLabel(market: 'first_inning_runs' | 'f5_runs'): string {
   return MARKET_LABEL[market];
 }
 
+/** Human label for a STORED leg's market string (nullable/loose), for post-log
+ *  display. Returns null for unknown/absent markets so callers fall back to stat_type. */
+export function betLegMarketLabel(market: string | null | undefined): string | null {
+  if (market === 'first_inning_runs' || market === 'f5_runs') return MARKET_LABEL[market];
+  return null;
+}
+
 /** Player-leg labels are "{name} {stat_type} {side} {line}"; strip the known
  *  suffix to recover the name. Falls back to the raw label if it doesn't match. */
 export function playerNameFromLabel(leg: {
@@ -55,8 +62,8 @@ export function selectLatestRun(
     .slice(0, n);
 }
 
-/** Paper-bet payload for a construction. Team legs log but cannot auto-settle
- *  (BetLegInput has no game_id/market) — that's intentional and documented. */
+/** Paper-bet payload for a construction. Team legs carry game_id + market
+ *  (structured); they stay log-only (no auto-settle wired). */
 export function builderConstructionToBetInput(
   construction: PlaystatBuilderConstruction,
   gamesById: Map<number, PlaystatGame>,
@@ -66,8 +73,9 @@ export function builderConstructionToBetInput(
     if (leg.kind === 'team') {
       const m = matchup(leg.game_id, gamesById);
       return {
-        player_name: `${m ?? `Game ${leg.game_id}`} · ${marketLabel(leg.market)}`,
-        stat_type: leg.market,
+        player_name: m ?? `Game ${leg.game_id}`,
+        market: leg.market,
+        game_id: leg.game_id,
         line_value: leg.line,
         side: leg.side,
         odds: leg.odds,
@@ -76,6 +84,8 @@ export function builderConstructionToBetInput(
     return {
       player_name: playerNameFromLabel(leg),
       stat_type: leg.stat_type,
+      game_id: leg.game_id,
+      player_id: leg.player_id,
       line_value: leg.line,
       side: leg.side,
       odds: leg.odds,
