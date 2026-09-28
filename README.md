@@ -6,7 +6,7 @@ The mobile client for [Budgerr](https://github.com/aayushpokhrel1/Budgerr) — a
 
 It's a pure frontend. All the actual logic — Plaid sync, bet settlement, budgeting math, reward-rate lookups — lives in the [Budgerr backend](https://github.com/aayushpokhrel1/Budgerr) (FastAPI + Postgres). This app just renders it and lets you log/settle bets.
 
-Scope for now: **you, personally**, same as the backend. No auth, no multi-user support — see the backend README's Section 13 for what changes if that ever expands.
+Scope for now: **you, personally**, same as the backend. No auth, no multi-user support — see the backend repo's `PRODUCT.md` section 7 for what changes if that ever expands.
 
 ---
 
@@ -22,14 +22,14 @@ Budgerr App (this repo)
 ```
 
 - No local database, no offline cache beyond what React Query keeps in memory — this app is a thin client over the backend's API
-- A second, independent frontend — [`budgerr-web`](https://github.com/aayushpokhrel1/budgerr-web), a full Next.js mirror — hits the same backend; see the backend README's Section 9
-- The Log-a-bet form also calls a second, unrelated API directly: [playstat](https://github.com/aayushpokhrel1/Playstat)'s `GET /edges`, for the "Tonight's edges" pre-fill panel (see Section 5) — read-only, no shared backend or database with Budgerr
+- A second, independent frontend — [`budgerr-web`](https://github.com/aayushpokhrel1/budgerr-web), a full Next.js mirror — hits the same backend; see the backend repo's `docs/ARCHITECT.md` section 8
+- The Log-a-bet form pre-fills legs from [playstat](https://github.com/aayushpokhrel1/Playstat)'s parlay-builder feed, in the "Tonight's builder picks" panel (see Section 5). It is read-only, shares no backend or database with Budgerr, and is reached **through the Budgerr backend's `/playstat/*` proxy** rather than called directly, so the playstat key never ships in the client. The older `GET /edges` source is frozen upstream and no longer used; see the backend repo's `docs/ARCHITECT.md` section 5
 
 ---
 
 ## 3. Tech stack
 
-- **Expo** (TypeScript) — chosen over bare React Native for the personal-project ergonomics: fast refresh, `expo start --web` for a browser preview without a simulator, and EAS/`expo export` for eventually producing a side-loadable APK (see backend README Section 11 — no Play Store listing needed for personal use)
+- **Expo** (TypeScript) — chosen over bare React Native for the personal-project ergonomics: fast refresh, `expo start --web` for a browser preview without a simulator, and EAS/`expo export` for eventually producing a side-loadable APK (see the backend repo's `PRODUCT.md` — no Play Store listing needed for personal use)
 - **Expo Router** — file-based navigation (`app/` directory), built on React Navigation under the hood. Chosen over hand-rolled React Navigation setup since it's now Expo's default and scaffolds a working tab bar + modal pattern immediately
 - **React Query** (`@tanstack/react-query`) — server state (fetching, caching, invalidation) for every screen. No Redux/Zustand — there's no meaningful client-only state yet beyond form drafts
 
@@ -71,7 +71,7 @@ lib/
 - Category tiles — other budget categories (groceries, dining, etc.) at a glance
 - Recent bets — last 5 logged bets with status (pending/won/lost), tapping "+ Log a bet" opens the quick-entry modal
 - Best-card tip — "best card for [category] right now," pulled from the rewards tracker's proactive lookup
-- Trend stats — net bet profit vs. bank net cash flow for the current month, shown side by side since the backend deliberately keeps these as two separate numbers (they can diverge — see backend README Section 3.2)
+- Trend stats — net bet profit vs. bank net cash flow for the current month, shown side by side since the backend deliberately keeps these as two separate numbers (they can diverge — see the backend repo's `docs/ARCHITECT.md` section 2.2)
 - Recurring charges card — detected subscriptions/recurring merchants with monthly total, interval, and an inactive tag for ones that have stopped
 - Expiring rewards-rate banner — warns when a rotating-category rate (e.g. 5x groceries) is ending within 45 days
 
